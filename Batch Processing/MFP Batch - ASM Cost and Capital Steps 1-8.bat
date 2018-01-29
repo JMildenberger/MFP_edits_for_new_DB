@@ -1,0 +1,12 @@
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Pre MFP Batch Programs\Clear MFP Libraries ASM Costs Capital Steps 1-8.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_ASM Costs.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital Import.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital BEA Asset Totals.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital CFT and ACES.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital BEA Industry Totals.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital RAS.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital Special Tools PIM.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital Asset Nominal Investment.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital Deflate Assets.sas" 
+"C:\Program Files\SASHome\SASFoundation\9.4\sas.exe" -sysin "\\filer6\OPT\IT\Prod\DIPStest\SAS Testing\MFP Re-write\Final Programs\Manf_Capital PIM.sas" 
+

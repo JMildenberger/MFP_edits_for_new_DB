@@ -1,0 +1,408 @@
+1                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.50 seconds
+      cpu time            0.32 seconds
+      
+1          /*Allows SEG to replace variable names with spaces from Excel files with an underscore*/
+2          options validvarname=v7;
+3          options nosyntaxcheck;
+4          
+5          libname capital 'Q:\MFP\SAS Libraries\Manufacturing\Capital\capital';
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+6          libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
+NOTE: Libref COMP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\comp
+7          libname deflator 'Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator';
+NOTE: Libref DEFLATOR was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator
+8          libname sptools 'Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools';
+NOTE: Libref SPTOOLS was successfully assigned as follows: 
+2                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools
+9          libname lives 'Q:\MFP\SAS Libraries\Manufacturing\Capital\lives';
+NOTE: Libref LIVES was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\lives
+10         libname ras 'Q:\MFP\SAS Libraries\Manufacturing\Capital\ras';
+NOTE: Libref RAS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\ras
+11         libname beadfnew 'Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew';
+NOTE: Libref BEADFNEW was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew
+12         libname invest 'Q:\MFP\SAS Libraries\Manufacturing\Capital\invest';
+NOTE: Libref INVEST was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\invest
+13         libname rental 'Q:\MFP\SAS Libraries\Manufacturing\Capital\rental';
+NOTE: Libref RENTAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\rental
+14         libname kdetails 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails';
+NOTE: Libref KDETAILS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails
+15         libname kstock4d 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d';
+NOTE: Libref KSTOCK4D was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d
+16         libname pqfork 'Q:\MFP\SAS Libraries\Manufacturing\Capital\pqfork';
+NOTE: Library PQFORK does not exist.
+17         libname stock 'Q:\MFP\SAS Libraries\Manufacturing\Capital\stock';
+NOTE: Libref STOCK was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\stock
+18         libname final 'Q:\MFP\SAS Libraries\Manufacturing\Capital\final';
+NOTE: Libref FINAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\final
+3                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+19         libname exports 'Q:\MFP\SAS Libraries\Manufacturing\Capital\exports';
+NOTE: Library EXPORTS does not exist.
+20         libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+21         
+22         /*Creating a macro variable for the update year*/
+23          data _null_;
+24               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+25               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+26               input updateid firstyr lastyr baseperiod;
+27               call symput('last', trim(left(put(lastyr, 4.))));
+28         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+29          %put &last;
+2015
+30         
+31         
+32         /**********Calculate real investment for special tools asset in NAICS &indy, 3362 and 3363 and run PIM******/
+33         
+34         /*Merge nominal total equipment investment for each industry*/
+35         %macro loop;
+36         %do indy=3361 %to 3363;
+37         data work.nom_invest_1958_2001_&indy;
+38         set capital.naicscapexp (where=(NAICS="&indy")obs=44);
+4                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+39         Equipment_&indy = Equipment;
+40         drop equipment;
+41         run;
+42         
+43         data work.nom_invest_2002_forward_&indy;
+44         set capital.newcapexp (where=(NAICS="&indy"));
+45         equipment_&indy=all_other_equipment;
+46         keep year equipment_&indy;
+47         
+48         data work.nom_invest_&indy;
+49         set work.nom_invest_1958_2001_&indy
+50             nom_invest_2002_forward_&indy;
+51         run;
+52         %end;
+53         %mend loop;
+54         %loop;
+
+NOTE: There were 44 observations read from the data set CAPITAL.NAICSCAPEXP.
+      WHERE NAICS='3361';
+NOTE: The data set WORK.NOM_INVEST_1958_2001_3361 has 44 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 14 observations read from the data set CAPITAL.NEWCAPEXP.
+      WHERE NAICS='3361';
+NOTE: The data set WORK.NOM_INVEST_2002_FORWARD_3361 has 14 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 44 observations read from the data set WORK.NOM_INVEST_1958_2001_3361.
+NOTE: There were 14 observations read from the data set WORK.NOM_INVEST_2002_FORWARD_3361.
+NOTE: The data set WORK.NOM_INVEST_3361 has 58 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+5                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+
+NOTE: There were 44 observations read from the data set CAPITAL.NAICSCAPEXP.
+      WHERE NAICS='3362';
+NOTE: The data set WORK.NOM_INVEST_1958_2001_3362 has 44 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 14 observations read from the data set CAPITAL.NEWCAPEXP.
+      WHERE NAICS='3362';
+NOTE: The data set WORK.NOM_INVEST_2002_FORWARD_3362 has 14 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 44 observations read from the data set WORK.NOM_INVEST_1958_2001_3362.
+NOTE: There were 14 observations read from the data set WORK.NOM_INVEST_2002_FORWARD_3362.
+NOTE: The data set WORK.NOM_INVEST_3362 has 58 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 44 observations read from the data set CAPITAL.NAICSCAPEXP.
+      WHERE NAICS='3363';
+NOTE: The data set WORK.NOM_INVEST_1958_2001_3363 has 44 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+
+6                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: There were 14 observations read from the data set CAPITAL.NEWCAPEXP.
+      WHERE NAICS='3363';
+NOTE: The data set WORK.NOM_INVEST_2002_FORWARD_3363 has 14 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: There were 44 observations read from the data set WORK.NOM_INVEST_1958_2001_3363.
+NOTE: There were 14 observations read from the data set WORK.NOM_INVEST_2002_FORWARD_3363.
+NOTE: The data set WORK.NOM_INVEST_3363 has 58 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+55         
+56         data work.sptools;
+57         merge work.nom_invest_3361 work.nom_invest_3362 work.nom_invest_3363 sptools.special_tools (where=(year>1957));
+58         by year;
+59         /*create industy proportions of total equipment investment*/
+60         prop3361= equipment_3361 / (equipment_3361 + equipment_3362 + equipment_3363);
+61         prop3362= equipment_3362 / (equipment_3361 + equipment_3362 + equipment_3363);
+62         prop3363= equipment_3363 / (equipment_3361 + equipment_3362 + equipment_3363);
+63         /*nominal special tools investment for each industry*/
+64         nom_sptools3361 = prop3361 * nomspt;
+65         nom_sptools3362 = prop3362 * nomspt;
+66         nom_sptools3363 = prop3363 * nomspt;
+67         /*deflate special tools investment*/
+68         real_sptools3361 = nom_sptools3361 /defspt;
+69         real_sptools3362 = nom_sptools3362 /defspt;
+70         real_sptools3363 = nom_sptools3363 /defspt;
+71         run;
+
+NOTE: There were 58 observations read from the data set WORK.NOM_INVEST_3361.
+NOTE: There were 58 observations read from the data set WORK.NOM_INVEST_3362.
+NOTE: There were 58 observations read from the data set WORK.NOM_INVEST_3363.
+NOTE: There were 58 observations read from the data set SPTOOLS.SPECIAL_TOOLS.
+      WHERE year>1957;
+7                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: The data set WORK.SPTOOLS has 58 observations and 19 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+72         
+73         /**************Calculating stocks for special tools******************/
+74         proc iml;
+NOTE: IML Ready
+75         %macro try (indy = );
+76         %do indy = 3361 %to 3363;
+77         use work.sptools;
+78         read all var {real_sptools&indy} into investment;
+79         use work.sptools;
+80         read all var {year} into year;
+81         
+82         acol=ncol(investment);
+83         
+84         life=3;
+85         
+86         
+87         /*Reading in the efficiency decline matrix for equipment*/
+88         USE lives.RNET_EQUIP;
+89         READ ALL INTO RNET;
+90         /*Removing the Age column so that the column number matches life*/
+91         COL=NCOL(RNET);
+92         RNET=RNET[,2:COL];
+93         RNET=RNET[,life];
+94         /*TRUNCATING RNET TO BE 2*SERVICE LIFE - 1*/
+95         END_ROW=int(life*1.98);
+96         RNET=RNET[1:END_ROW,];
+97         
+98         
+99         /* FOLLOWING KRISTA THIS SETS UP MATRICES FOR THE MANIPULATION*/
+100        IYR=NROW(investment);
+101        ACOL=NCOL(investment);
+102        DEPR=J(IYR,ACOL,0);
+103        EDEPR=J(IYR,ACOL,0);
+104        STOCKS=J(IYR,ACOL);
+8                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+105        AR=J(IYR,ACOL);
+106        WEALTH=J(IYR,ACOL);
+107        INIV=NROW(RNET);
+108        INTAGE=NROW(RNET);
+109        
+110        /*PRINT STOCKS iniv;*/
+111        
+112        /* THIS IS WHERE RNET IS APPLIED TO THE INVESTMENT SERIES*/
+113        STOCKS = investment;
+114        
+115        DO I = 1 TO ACOL;
+116        STOCKS[1,I] = investment[1,I];
+117        END;
+118        
+119        DO I=2 TO IYR;
+120        	DO J=1 TO INIV;
+121        	IF I>J THEN STOCKS[I,] = STOCKS[I,]+ investment[(I-J),]#RNET[J,];
+122        	END;
+123        END;
+124        KRT = Year||  STOCKS;
+125        
+126        
+127        create sptools.Sptools_Net_Stock&indy from KRT;
+128        append from KRT;
+129        
+130        /********************** Wealth Stocks *************************************/
+131        
+132        /* Efficiency_Decline is the efficiency decline factor */
+133        Efficiency_Decline = investment;
+134        Efficiency_Decline[1,] = 0;
+135        DO I = 2 TO IYR;
+136        Efficiency_Decline[I,] = Efficiency_Decline[I,] - (STOCKS[I,] - STOCKS[(I-1),]);
+137        END;
+138        
+139        Efficiency_Decline2 = YEAR||Efficiency_Decline;
+140        
+141        
+142        SURV=J((INTAGE+1),1);
+143        SURV[1,1] = 1;
+144        DO I = 1 TO INTAGE;
+9                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+145        SURV[(I+1),] = RNET[I,1];
+146        END;
+147        
+148        /*This formula requires the discount rate. For now it is set to 0.04 but can be changed if necessary*/
+149        XMORT = J(200, 1, 0);
+150        XMARKT = J(362, 1, 0);
+151        DO I = 1 TO (INTAGE +1);
+152        DO J = 1 TO 362;
+153        X = I - J;
+154        XMORT[I,] = SURV[I,]*((1-0.04)**X);
+155        IF X >= 0 THEN XMARKT[J,] = XMARKT[J,] + XMORT[I,];
+156        END;
+157        END;
+158        
+159        X = XMARKT[1,1];
+160        DO I = 1 TO INTAGE+1;
+161        XMARKT[I,] = XMARKT[I,]/X;
+162        END;
+163        
+164        WEALTH = investment;
+165        WEALTH[1,] = investment[1,];
+166        DO I = 2 TO IYR;
+167        	DO J = 1 TO INIV;
+168        	X = I-J;
+169        		IF X >=1 THEN WEALTH[I,] = WEALTH[I,] + investment[(I-J),]#XMARKT[(J+1),];
+170        		END;
+171        END;
+172        
+173        RWT = WEALTH;
+174        DPT = investment;
+175        DPT[1,]=0;
+176        DO I = 2 TO IYR;
+177        DPT[I,]=DPT[I,]-(RWT[I,] - RWT[(I-1),]);
+178        END;
+179        
+180        DEPRECIATION = YEAR||DPT;
+181        WEALTH_STOCK = YEAR||RWT;
+182        
+183        create sptools.Sptools_Depreciation&indy from DEPRECIATION;
+184        append from DEPRECIATION;
+10                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+185        create sptools.Sptools_Wealth_Stock&indy from WEALTH_STOCK;
+186        append from WEALTH_STOCK;
+187        
+188        %end;
+189        
+190        %mend try;
+191        %try;
+192        quit;
+NOTE: Exiting IML.
+NOTE: The data set SPTOOLS.SPTOOLS_NET_STOCK3361 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_DEPRECIATION3361 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_WEALTH_STOCK3361 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_NET_STOCK3362 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_DEPRECIATION3362 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_WEALTH_STOCK3362 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_NET_STOCK3363 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_DEPRECIATION3363 has 58 observations and 2 variables.
+NOTE: The data set SPTOOLS.SPTOOLS_WEALTH_STOCK3363 has 58 observations and 2 variables.
+NOTE: PROCEDURE IML used (Total process time):
+      real time           0.38 seconds
+      cpu time            0.14 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.15 seconds
+      cpu time            0.60 seconds
+      

@@ -1,0 +1,1584 @@
+1                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.51 seconds
+      cpu time            0.49 seconds
+      
+1          /*Cost of Services Program
+2            Created by - Jason McClellan
+3            Last Modified - 06/23/2017
+4            Modifed by - Jennifer Kim */
+5          
+6          /*ABSTRACT
+7            Cost of Services is calculated using a combination of sources including DMSP KLEMS, BEA KLEMS, and BEA IO Use. Cost
+7        !  of Capital is calculated as a residual once
+8            Labor Compensation and Intermediate Purchases are removed from the Value of Production. In order to make sure that
+8        ! Cost of Capital doesn't become negative,
+9            we need to pull in the other IP Costs to calculate Cost of Capital. When Cost of Capital is negative, Cost of
+9        ! Capital is set to equal Capital Expenditures and
+10           Cost of Services is adjusted accordingly. */
+11         
+12         options symbolgen;
+13         options validvarname=v7;
+14         
+15         /*Define Permanent SAS Libraries*/
+2                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+16         libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+17         libname Capital "Q:\MFP\SAS Libraries\Manufacturing\Capital\capital";
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+18         
+19         
+20         /*Creates a macro variables from textfile*/
+21         data _null_;
+22               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+23               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+24               input updateid firstyr lastyr baseperiod;
+25         	  year = trim(left(put(lastyr, 4.)));
+26         	  lastyear_2 = substr(year,3,2);
+27         	  lastyear_3 = substr(year,2,3);
+28         	  call symputx ("lastyear", year);
+29         	  call symputx ("lastyear_2", lastyear_2);
+30         	  call symputx ("lastyear_3", lastyear_3);
+31         	  call symput('updateid', trim(left(put(updateid, 3.))));
+32         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+33         
+34         
+3                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+35         /*--------------------------------------------------------
+36         Section 1, pull in the source files
+37         ----------------------------------------------------------*/
+38         /*The three use tables below plus the classification file will probably not be updated until the 2012 Use table is
+38       ! released and the earlier IO tables are revised.*/
+39         %let path_IO97=%str("R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\1997 Use on 2012 Basis.xlsb");
+40         %let path_IO02=%str("R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\2002 Use on 2012 Basis.xlsb");
+41         %let path_IO07=%str("R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\2007 Use on 2012 Basis.xlsb");
+42         %let path_Class=%str("R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\Commodity Classification.xlsb");
+43         
+44         /*The following three files come from DMSP's public MFP flat files found here
+44       ! (http://download.bls.gov/pub/time.series/mp/). Right now I manually download these
+45           files, but they could probably be pulled programatically. These are used to move our pre-1997 service values.*/
+46         %let path_DMSP_sector=%nrstr('R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector');
+47         %let path_DMSP_measure=%nrstr('R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure');
+48         %let path_DMSP_Data=%nrstr('R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData');
+49         
+50         /*This next file is the KLEMS file from the BEA. File can be found here:
+50       ! http://www.bea.gov/industry/gdpbyind_data.htm */
+51         %let path_BEA=%str("R:\MFP DataSets\Manufacturing\IP\SAS Inputs\GDPbyInd_KLEMS_NAICS_1997-&lastyear..xlsx");
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+52         
+53         /*In this section, import the IO tables and calculate the SERFAC ratios. This step can probably be done outside of
+53       ! this program, but I like the idea
+54         of calculating the SERFAC ratio dynamically just so I know the most recent values are being used. This section could
+54       ! be shortened with a macro.*/
+55         
+56         PROC IMPORT
+57         OUT=Work.IO97
+58         DataFile=&path_IO97
+SYMBOLGEN:  Macro variable PATH_IO97 resolves to "R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\1997 Use on 2012 Basis.xlsb"
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+59         REPLACE;
+60         RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.IO97 data set was successfully created.
+NOTE: The data set WORK.IO97 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.38 seconds
+      cpu time            1.04 seconds
+4                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      
+
+61         
+62         data work.IO97 (keep=NAICS IO Pro97 TC97 WHS97 RET97 PUR97);
+63         set work.IO97;
+64         if NAICS^="" then output; /*Sometimes there are blank rows. Remove them.*/
+65         run;
+
+NOTE: There were 28343 observations read from the data set WORK.IO97.
+NOTE: The data set WORK.IO97 has 28343 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+66         
+67         PROC IMPORT
+68         OUT=Work.IO02
+69         DataFile=&path_IO02
+SYMBOLGEN:  Macro variable PATH_IO02 resolves to "R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\2002 Use on 2012 Basis.xlsb"
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+70         REPLACE;
+71         RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.IO02 data set was successfully created.
+NOTE: The data set WORK.IO02 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.08 seconds
+      cpu time            0.92 seconds
+      
+
+72         
+73         data work.IO02 (keep=NAICS IO Pro02 TC02 WHS02 RET02 PUR02);
+74         set work.IO02;
+75         if NAICS^="" then output; /*Sometimes there are blank rows. Remove them.*/
+76         run;
+
+NOTE: There were 28343 observations read from the data set WORK.IO02.
+NOTE: The data set WORK.IO02 has 28343 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+5                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+77         
+78         PROC IMPORT
+79         OUT=Work.IO07
+80         DataFile=&path_IO07
+SYMBOLGEN:  Macro variable PATH_IO07 resolves to "R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\2007 Use on 2012 Basis.xlsb"
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+81         REPLACE;
+82         RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.IO07 data set was successfully created.
+NOTE: The data set WORK.IO07 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.12 seconds
+      cpu time            0.88 seconds
+      
+
+83         
+84         data work.IO07 (keep=NAICS IO Pro07 TC07 WHS07 RET07 PUR07);
+85         set work.IO07;
+86         if NAICS^="" then output; /*Sometimes there are blank rows. Remove them.*/
+87         run;
+
+NOTE: There were 28343 observations read from the data set WORK.IO07.
+NOTE: The data set WORK.IO07 has 28343 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+88         
+89         /*The Class file lets use know whether an industry/commodity combination is a material, service, or something else.*/
+90         PROC IMPORT
+91         OUT=Work.Class
+92         DataFile=&path_Class.
+SYMBOLGEN:  Macro variable PATH_CLASS resolves to "R:\MFP DataSets\Manufacturing\IP\Inputs\IO Tables\Commodity 
+            Classification.xlsb"
+6                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+93         DBMS=Excel
+94         REPLACE;
+95         RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.CLASS data set was successfully created.
+NOTE: The data set WORK.CLASS has 29060 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.88 seconds
+      cpu time            0.74 seconds
+      
+
+96         
+97         /*Read in Cost of Supplies*/
+98         data work.Supplies_rawflat;
+99         set ip.costofsupplies_ne;
+100        CostofSupplies_NE = CostofSupplies_NE;
+101        run;
+
+NOTE: There were 2494 observations read from the data set IP.COSTOFSUPPLIES_NE.
+NOTE: The data set WORK.SUPPLIES_RAWFLAT has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+102        
+103        proc sort data=work.Supplies_rawflat nodupkey;
+104        by NAICS Year;
+105        run;
+
+NOTE: There were 2494 observations read from the data set WORK.SUPPLIES_RAWFLAT.
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.SUPPLIES_RAWFLAT has 2494 observations and 3 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+106        
+7                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+107        PROC TRANSPOSE data=work.Supplies_rawflat out=work.Supplies_Raw (drop=_NAME_) prefix=y;
+108        by NAICS;
+109        ID Year;
+110        Var CostofSupplies_NE;
+111        run;
+
+NOTE: There were 2494 observations read from the data set WORK.SUPPLIES_RAWFLAT.
+NOTE: The data set WORK.SUPPLIES_RAW has 86 observations and 30 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+112        
+113        PROC IMPORT
+114        OUT=work.DMSP_Sector
+115        DataFile=&path_DMSP_Sector.
+SYMBOLGEN:  Macro variable PATH_DMSP_SECTOR resolves to 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector'
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+116        DBMS=dlm
+117        REPLACE;
+118        Delimiter='09'x; /*Indicates that this is a tab delimited file*/
+119        RUN;
+
+Number of names found is less than number of variables found. 
+Number of names found is less than number of variables found. 
+120         /**********************************************************************
+121         *   PRODUCT:   SAS
+122         *   VERSION:   9.4
+123         *   CREATOR:   External File Interface
+124         *   DATE:      23JUN17
+125         *   DESC:      Generated SAS Datastep Code
+126         *   TEMPLATE SOURCE:  (None Specified.)
+127         ***********************************************************************/
+128            data WORK.DMSP_SECTOR    ;
+129            %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+130            infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector' delimiter='09'x MISSOVER DSD lrecl=32767
+130      ! firstobs=2 ;
+131               informat sector_code best32. ;
+132               informat sector_name $60. ;
+8                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+133               informat display_level best32. ;
+134               informat selectable $1. ;
+135               informat sort_sequence best32. ;
+136               informat VAR6 $1. ;
+137               format sector_code best12. ;
+138               format sector_name $60. ;
+139               format display_level best12. ;
+140               format selectable $1. ;
+141               format sort_sequence best12. ;
+142               format VAR6 $1. ;
+143            input
+144                        sector_code
+145                        sector_name $
+146                        display_level
+147                        selectable $
+148                        sort_sequence
+149                        VAR6 $
+150            ;
+151            if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro variable */
+152            run;
+
+NOTE: The infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector' is:
+      Filename=R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector,
+      RECFM=V,LRECL=32767,File Size (bytes)=1366,
+      Last Modified=23Jun2017:09:47:04,
+      Create Time=23Jun2017:12:28:42
+
+NOTE: 23 records were read from the infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector'.
+      The minimum record length was 34.
+      The maximum record length was 73.
+NOTE: The data set WORK.DMSP_SECTOR has 23 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+23 rows created in WORK.DMSP_SECTOR from R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.sector.
+  
+  
+  
+9                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: WORK.DMSP_SECTOR data set was successfully created.
+NOTE: The data set WORK.DMSP_SECTOR has 23 observations and 6 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.57 seconds
+      cpu time            0.09 seconds
+      
+
+153        
+154        /*Pull out the NAICS code from the jumble of the 'sector_name' series*/
+155        data DMSP_Sector;
+156        set DMSP_Sector;
+157        	Start=find(sector_name,"(");
+158        	End = length(sector_name);
+159        	NAICS=substr(sector_name,start+7,End-Start-7);
+160        run;
+
+NOTE: There were 23 observations read from the data set WORK.DMSP_SECTOR.
+NOTE: The data set WORK.DMSP_SECTOR has 23 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+161        
+162        PROC IMPORT
+163        OUT=work.DMSP_Measure
+164        DataFile=&path_DMSP_Measure.
+SYMBOLGEN:  Macro variable PATH_DMSP_MEASURE resolves to 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure'
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+165        DBMS=dlm
+166        REPLACE;
+167        Delimiter='09'x;
+168        RUN;
+
+Number of names found is less than number of variables found. 
+Number of names found is less than number of variables found. 
+169         /**********************************************************************
+170         *   PRODUCT:   SAS
+171         *   VERSION:   9.4
+172         *   CREATOR:   External File Interface
+10                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+173         *   DATE:      23JUN17
+174         *   DESC:      Generated SAS Datastep Code
+175         *   TEMPLATE SOURCE:  (None Specified.)
+176         ***********************************************************************/
+177            data WORK.DMSP_MEASURE    ;
+178            %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+179            infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure' delimiter='09'x MISSOVER DSD lrecl=32767
+179      ! firstobs=2 ;
+180               informat measure_code best32. ;
+181               informat measure_text $64. ;
+182               informat display_level best32. ;
+183               informat selectable $1. ;
+184               informat sort_sequence best32. ;
+185               informat VAR6 $1. ;
+186               format measure_code best12. ;
+187               format measure_text $64. ;
+188               format display_level best12. ;
+189               format selectable $1. ;
+190               format sort_sequence best12. ;
+191               format VAR6 $1. ;
+192            input
+193                        measure_code
+194                        measure_text $
+195                        display_level
+196                        selectable $
+197                        sort_sequence
+198                        VAR6 $
+199            ;
+200            if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro variable */
+201            run;
+
+NOTE: The infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure' is:
+      Filename=R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure,
+      RECFM=V,LRECL=32767,File Size (bytes)=1780,
+      Last Modified=23Jun2017:09:46:48,
+      Create Time=23Jun2017:12:28:42
+
+NOTE: 39 records were read from the infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure'.
+      The minimum record length was 17.
+      The maximum record length was 81.
+11                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The data set WORK.DMSP_MEASURE has 39 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+39 rows created in WORK.DMSP_MEASURE from R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.measure.
+  
+  
+  
+NOTE: WORK.DMSP_MEASURE data set was successfully created.
+NOTE: The data set WORK.DMSP_MEASURE has 39 observations and 6 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.04 seconds
+      
+
+202        
+203        PROC IMPORT
+204        OUT=work.DMSP_data
+205        DataFile=&path_DMSP_data.
+SYMBOLGEN:  Macro variable PATH_DMSP_DATA resolves to 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData'
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+206        DBMS=dlm
+207        REPLACE;
+208        Delimiter='09'x;
+209        RUN;
+
+210         /**********************************************************************
+211         *   PRODUCT:   SAS
+212         *   VERSION:   9.4
+213         *   CREATOR:   External File Interface
+214         *   DATE:      23JUN17
+215         *   DESC:      Generated SAS Datastep Code
+216         *   TEMPLATE SOURCE:  (None Specified.)
+217         ***********************************************************************/
+218            data WORK.DMSP_DATA    ;
+219            %let _EFIERR_ = 0; /* set the ERROR detection macro variable */
+220            infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData' delimiter='09'x MISSOVER DSD lrecl=32767
+220      ! firstobs=2 ;
+12                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+221               informat series_id $10. ;
+222               informat year best32. ;
+223               informat period $3. ;
+224               informat value best32. ;
+225               informat footnote_codes $1. ;
+226               format series_id $10. ;
+227               format year best12. ;
+228               format period $3. ;
+229               format value best12. ;
+230               format footnote_codes $1. ;
+231            input
+232                        series_id $
+233                        year
+234                        period $
+235                        value
+236                        footnote_codes $
+237            ;
+238            if _ERROR_ then call symputx('_EFIERR_',1);  /* set ERROR detection macro variable */
+239            run;
+
+NOTE: The infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData' is:
+      Filename=R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData,
+      RECFM=V,LRECL=32767,File Size (bytes)=1703928,
+      Last Modified=23Jun2017:09:45:54,
+      Create Time=23Jun2017:12:28:42
+
+NOTE: 32767 records were read from the infile 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData'.
+      The minimum record length was 50.
+      The maximum record length was 50.
+NOTE: The data set WORK.DMSP_DATA has 32767 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.03 seconds
+      
+
+32767 rows created in WORK.DMSP_DATA from R:\MFP DataSets\Manufacturing\IP\SAS Inputs\mp.data.1.AllData.
+  
+  
+  
+NOTE: WORK.DMSP_DATA data set was successfully created.
+13                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The data set WORK.DMSP_DATA has 32767 observations and 5 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.07 seconds
+      
+
+240        
+241        PROC IMPORT
+242        OUT=work.BEA
+243        DataFile=&path_BEA.
+SYMBOLGEN:  Macro variable PATH_BEA resolves to "R:\MFP DataSets\Manufacturing\IP\SAS 
+            Inputs\GDPbyInd_KLEMS_NAICS_1997-2015.xlsx"
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+244        DBMS=EXCEL
+245        REPLACE;
+246        sheet="E,M,S";
+247        RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.BEA data set was successfully created.
+NOTE: The data set WORK.BEA has 315 observations and 26 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.43 seconds
+      cpu time            0.31 seconds
+      
+
+248        
+249        data work.bea2 (drop=Code i Industry_Title rename=(temp=Industry_Title));
+250        set work.bea;
+251        	array aYear _997-_999
+251      ! _000-_&lastyear_3;
+SYMBOLGEN:  Macro variable LASTYEAR_3 resolves to 015
+252        	array aYear2
+252      ! BEA_1997-BEA_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+253        	do i=1 to dim(aYear);
+254        		aYear2[i]=aYear[i];
+255        	end;
+256        	drop _997-_999 _000-_&lastyear_3;
+SYMBOLGEN:  Macro variable LASTYEAR_3 resolves to 015
+257        	temp=strip(Industry_Title);
+14                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+258        	if code="S" then output;
+259        run;
+
+NOTE: There were 315 observations read from the data set WORK.BEA.
+NOTE: The data set WORK.BEA2 has 100 observations and 25 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+260        
+261        PROC IMPORT
+262        OUT=work.BEA_Codes
+263        DataFile=&path_BEA.
+SYMBOLGEN:  Macro variable PATH_BEA resolves to "R:\MFP DataSets\Manufacturing\IP\SAS 
+            Inputs\GDPbyInd_KLEMS_NAICS_1997-2015.xlsx"
+SYMBOLGEN:  Some characters in the above value which were subject to macro quoting have been unquoted for printing.
+264        DBMS=EXCEL
+265        REPLACE;
+266        sheet="NAICS codes";
+267        RUN;
+
+1                                         The SAS System               13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable _IMEXSERROR_ resolves to SERROR
+NOTE: WORK.BEA_CODES data set was successfully created.
+NOTE: The data set WORK.BEA_CODES has 717 observations and 9 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.44 seconds
+      cpu time            0.28 seconds
+      
+
+268        
+269        data work.BEA_Codes2 (keep=F2 F3 rename=(F2=BEA_Code F3=Title));
+270        set work.BEA_Codes;
+271        if F2="" OR F3="" then delete;
+272        run;
+
+NOTE: There were 717 observations read from the data set WORK.BEA_CODES.
+NOTE: The data set WORK.BEA_CODES2 has 71 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+15                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      
+
+272      !      	
+273        
+274        
+275        /*--------------------------------------------------------
+276        Section 2, Match the Class with each Serfac
+277        ----------------------------------------------------------*/
+278        PROC SQL;
+279        	CREATE TABLE work.IO97_Match AS
+280        	SELECT a.*, substr(a.NAICS,1,4) as Industry_4, b.classification
+281        	FROM work.IO97 a inner join work.class b
+282        	ON (a.NAICS=b.NAICS) AND (a.IO=b.IO);
+NOTE: Table WORK.IO97_MATCH created, with 28343 rows and 9 columns.
+
+283        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+284        
+285        PROC SQL;
+286        	CREATE TABLE work.IO02_Match AS
+287        	SELECT a.*, substr(a.NAICS,1,4) as Industry_4, b.classification
+288        	FROM work.IO02 a inner join work.class b
+289        	ON (a.NAICS=b.NAICS) AND (a.IO=b.IO);
+NOTE: Table WORK.IO02_MATCH created, with 28343 rows and 9 columns.
+
+290        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+291        
+292        PROC SQL;
+293        	CREATE TABLE work.IO07_Match AS
+294        	SELECT a.*, substr(a.NAICS,1,4) as Industry_4, b.classification
+295        	FROM work.IO07 a inner join work.class b
+16                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+296        	ON (a.NAICS=b.NAICS) AND (a.IO=b.IO);
+NOTE: Table WORK.IO07_MATCH created, with 28343 rows and 9 columns.
+
+297        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+298        
+299        
+300        /*--------------------------------------------------------
+301        Section 3, Sum up the material and services for each IO table
+302        ----------------------------------------------------------*/
+303        PROC SQL;
+304        	CREATE TABLE work.IO97_Sum AS
+305        	SELECT Industry_4, sum(case when classification="M" THEN Pur97 ELSE 0 END) as Mat,
+306        						sum(case when classification="S" THEN Pro97 ELSE 0 END) as Serv,
+307        						calculated Serv/calculated Mat as SerFac
+308        	FROM work.IO97_Match
+309        	Group By Industry_4;
+NOTE: Table WORK.IO97_SUM created, with 86 rows and 4 columns.
+
+310        
+311        	CREATE TABLE work.IO02_Sum AS
+312        	SELECT Industry_4, sum(case when classification="M" THEN Pur02 ELSE 0 END) as Mat,
+313        						sum(case when classification="S" THEN Pro02 ELSE 0 END) as Serv,
+314        						calculated Serv/calculated Mat as SerFac
+315        	FROM work.IO02_Match
+316        	Group By Industry_4;
+NOTE: Table WORK.IO02_SUM created, with 86 rows and 4 columns.
+
+317        
+318        	CREATE TABLE work.IO07_Sum AS
+319        	SELECT Industry_4, sum(case when classification="M" THEN Pur07 ELSE 0 END) as Mat,
+320        						sum(case when classification="S" THEN Pro07 ELSE 0 END) as Serv,
+321        						calculated Serv/calculated Mat as SerFac
+322        	FROM work.IO07_Match
+323        	Group By Industry_4;
+NOTE: Table WORK.IO07_SUM created, with 86 rows and 4 columns.
+17                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+324        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.04 seconds
+      
+
+325        
+326        
+327        /*--------------------------------------------------------
+328        Section 4, Interpolate the SerFac Ratios
+329        ----------------------------------------------------------*/
+330        data SerFac97_07;
+331        merge IO97_sum(drop=Mat Serv rename=(Serfac=SerFac1997)) IO02_sum(drop=Mat Serv rename=(Serfac=SerFac2002))
+332        			IO07_sum(drop=Mat Serv rename=(SerFac=SerFac2007));
+333        by Industry_4;
+334        run;
+
+NOTE: There were 86 observations read from the data set WORK.IO97_SUM.
+NOTE: There were 86 observations read from the data set WORK.IO02_SUM.
+NOTE: There were 86 observations read from the data set WORK.IO07_SUM.
+NOTE: The data set WORK.SERFAC97_07 has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+335        
+336        data SerFac97_07_inter;
+337        retain Industry_4 SerFac1997-SerFac2007;
+338        set SerFac97_07;
+339        	SerFac1998=(SerFac2002-SerFac1997)/5+SerFac1997;
+340        	SerFac1999=(SerFac2002-SerFac1997)/5+SerFac1998;
+341        	SerFac2000=(SerFac2002-SerFac1997)/5+SerFac1999;
+342        	SerFac2001=(SerFac2002-SerFac1997)/5+SerFac2000;
+343        
+344        	SerFac2003=(SerFac2007-SerFac2002)/5+SerFac2002;
+345        	SerFac2004=(SerFac2007-SerFac2002)/5+SerFac2003;
+346        	SerFac2005=(SerFac2007-SerFac2002)/5+SerFac2004;
+347        	SerFac2006=(SerFac2007-SerFac2002)/5+SerFac2005;
+18                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+348        run;
+
+NOTE: There were 86 observations read from the data set WORK.SERFAC97_07.
+NOTE: The data set WORK.SERFAC97_07_INTER has 86 observations and 12 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+349        
+350        
+351        /*--------------------------------------------------------
+352        Section 5, Take the DMSP service values for 1987-1997
+353        ----------------------------------------------------------*/
+354        /*Duration = 1 (Level)*/
+355        /*Measure = 66 (Cost of Purchased Services, billions of current dollars)*/
+356        data work.DMSP_Data2;
+357        set work.DMSP_Data;
+358        	Sector_Code=substr(series_id,4,4);
+359        	Measure=substr(series_id,8,2);
+360        	Duration=substr(series_id,10,1);
+361        	if duration=1 AND Measure=66 then output;
+362        run;
+
+NOTE: Character values have been converted to numeric values at the places given by: (Line):(Column).
+      361:5    361:20   
+NOTE: There were 32767 observations read from the data set WORK.DMSP_DATA.
+NOTE: The data set WORK.DMSP_DATA2 has 588 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+363        
+364        /*Match this data set to the sector name*/
+365        PROC SQL;
+366        	CREATE TABLE work.DMSP_Data3 AS
+367        	SELECT a.sector_code, a.NAICS, b.year, b.value
+368        	FROM work.DMSP_sector a inner join work.DMSP_data2 b
+369        	ON (a.sector_code=input(b.sector_code,10.));
+19                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.DMSP_DATA3 created, with 588 rows and 4 columns.
+
+370        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+371        
+372        /*Find the ratio of current year to 'base year' 1997*/
+373        PROC SQL;
+374        	CREATE Table work.DMSP_rate AS
+375        	SELECT a.sector_code, a.NAICS, b.year, (b.value/a.value) as rate
+376        	FROM work.DMSP_data3 a inner join work.DMSP_data3 b
+377        	ON (a.sector_code=b.sector_code)
+378        	WHERE a.year=1997;
+NOTE: Table WORK.DMSP_RATE created, with 588 rows and 4 columns.
+
+379        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+380        
+381        
+382        /*--------------------------------------------------------
+383        Section 6, Find the 1997-2007 Cost of services
+384        ----------------------------------------------------------*/
+385        /*Multiply the serfac ratio by the cost of supplies*/
+386        data work.Service_97_07
+386      ! (drop=y1987-y1996 y2008-y&lastyear);
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+387        length NAICS $6;
+388        merge work.Supplies_raw work.Serfac97_07_inter(rename=(Industry_4=NAICS));
+389        by NAICS;
+390        %macro loop;
+391        	%do i=1997 %to 2007;
+392        		Services_&i.=y&i.*SerFac&i.;
+393        	%end;
+20                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+394        %mend loop;
+395        %loop
+SYMBOLGEN:  Macro variable I resolves to 1997
+SYMBOLGEN:  Macro variable I resolves to 1997
+SYMBOLGEN:  Macro variable I resolves to 1997
+SYMBOLGEN:  Macro variable I resolves to 1998
+SYMBOLGEN:  Macro variable I resolves to 1998
+SYMBOLGEN:  Macro variable I resolves to 1998
+SYMBOLGEN:  Macro variable I resolves to 1999
+SYMBOLGEN:  Macro variable I resolves to 1999
+SYMBOLGEN:  Macro variable I resolves to 1999
+SYMBOLGEN:  Macro variable I resolves to 2000
+SYMBOLGEN:  Macro variable I resolves to 2000
+SYMBOLGEN:  Macro variable I resolves to 2000
+SYMBOLGEN:  Macro variable I resolves to 2001
+SYMBOLGEN:  Macro variable I resolves to 2001
+SYMBOLGEN:  Macro variable I resolves to 2001
+SYMBOLGEN:  Macro variable I resolves to 2002
+SYMBOLGEN:  Macro variable I resolves to 2002
+SYMBOLGEN:  Macro variable I resolves to 2002
+SYMBOLGEN:  Macro variable I resolves to 2003
+SYMBOLGEN:  Macro variable I resolves to 2003
+SYMBOLGEN:  Macro variable I resolves to 2003
+SYMBOLGEN:  Macro variable I resolves to 2004
+SYMBOLGEN:  Macro variable I resolves to 2004
+SYMBOLGEN:  Macro variable I resolves to 2004
+SYMBOLGEN:  Macro variable I resolves to 2005
+SYMBOLGEN:  Macro variable I resolves to 2005
+SYMBOLGEN:  Macro variable I resolves to 2005
+SYMBOLGEN:  Macro variable I resolves to 2006
+SYMBOLGEN:  Macro variable I resolves to 2006
+SYMBOLGEN:  Macro variable I resolves to 2006
+SYMBOLGEN:  Macro variable I resolves to 2007
+SYMBOLGEN:  Macro variable I resolves to 2007
+SYMBOLGEN:  Macro variable I resolves to 2007
+396        drop y1997-y2007 serfac1997-serfac2007 ;
+397        run;
+
+NOTE: There were 86 observations read from the data set WORK.SUPPLIES_RAW.
+NOTE: There were 86 observations read from the data set WORK.SERFAC97_07_INTER.
+21                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The data set WORK.SERVICE_97_07 has 86 observations and 12 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+398        
+399        
+400        /*--------------------------------------------------------
+401        Section 7, Find the 1987-2006 Cost of services based on DMSP data
+402        ----------------------------------------------------------*/
+403        /*First, create a DMSP to NAICS correspondence*/
+404        data work.NAICS_IPS (keep=NAICS NAICS_3);
+405        format NAICS_3 $8.;
+406        set work.Service_97_07;
+407        NAICS_3=substr(NAICS,1,3);
+408        if NAICS_3 in ("311","312") then NAICS_3="311, 312";
+409        if NAICS_3 in ("313", "314") then NAICS_3="313, 314";
+410        if NAICS_3 in ("315", "316") then NAICS_3="315, 316";
+411        run;
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_97_07.
+NOTE: The data set WORK.NAICS_IPS has 86 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+412        
+413        /*Now, merge to the DMSP rate dataset*/
+414        PROC SQL;
+415        	CREATE TABLE work.DMSP_Rate2 AS
+416        	SELECT a.sector_code, a.NAICS as NAICS_3, a.year, a.rate, b.NAICS as NAICS_4
+417        	FROM work.DMSP_rate a INNER JOIN work.NAICS_ips b
+418        	ON (a.NAICS=b.NAICS_3);
+NOTE: Table WORK.DMSP_RATE2 created, with 2408 rows and 5 columns.
+
+419        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+22                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+420        
+421        /*Transpose the rates*/
+422        PROC SORT data=work.DMSP_Rate2;
+423        	by NAICS_4 year;
+424        RUN;
+
+NOTE: There were 2408 observations read from the data set WORK.DMSP_RATE2.
+NOTE: The data set WORK.DMSP_RATE2 has 2408 observations and 5 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+425        
+426        PROC TRANSPOSE data=work.DMSP_Rate2 out=work.DMSP_Rate_wide prefix=DMSP_;
+427        	by NAICS_4;
+428        	id year;
+429        	var rate;
+430        run;
+
+NOTE: There were 2408 observations read from the data set WORK.DMSP_RATE2.
+NOTE: The data set WORK.DMSP_RATE_WIDE has 86 observations and 30 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+431        
+432        data work.DMSP_Rate_Wide
+432      ! (drop=DMSP_1997-DMSP_&lastyear _NAME_);
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+433        set work.DMSP_Rate_Wide;
+434        run;
+
+WARNING: Not all variables in the list DMSP_1997-DMSP_2015 were found.
+NOTE: There were 86 observations read from the data set WORK.DMSP_RATE_WIDE.
+NOTE: The data set WORK.DMSP_RATE_WIDE has 86 observations and 11 variables.
+23                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+435        
+436        /*Multiply the DMSP rate by the 1987 Cost of services*/
+437        data work.Service_87_07;
+438        retain NAICS Services_1987-Services_2007;
+439        merge work.Service_97_07 work.DMSP_Rate_Wide (rename=(NAICS_4=NAICS));
+440        	%macro loop;
+441        		%do i=1987 %to 1996;
+442        			Services_&i.=DMSP_&i.*Services_1997;
+443        		%end;
+444        	%mend loop;
+445        	%loop
+SYMBOLGEN:  Macro variable I resolves to 1987
+SYMBOLGEN:  Macro variable I resolves to 1987
+SYMBOLGEN:  Macro variable I resolves to 1988
+SYMBOLGEN:  Macro variable I resolves to 1988
+SYMBOLGEN:  Macro variable I resolves to 1989
+SYMBOLGEN:  Macro variable I resolves to 1989
+SYMBOLGEN:  Macro variable I resolves to 1990
+SYMBOLGEN:  Macro variable I resolves to 1990
+SYMBOLGEN:  Macro variable I resolves to 1991
+SYMBOLGEN:  Macro variable I resolves to 1991
+SYMBOLGEN:  Macro variable I resolves to 1992
+SYMBOLGEN:  Macro variable I resolves to 1992
+SYMBOLGEN:  Macro variable I resolves to 1993
+SYMBOLGEN:  Macro variable I resolves to 1993
+SYMBOLGEN:  Macro variable I resolves to 1994
+SYMBOLGEN:  Macro variable I resolves to 1994
+SYMBOLGEN:  Macro variable I resolves to 1995
+SYMBOLGEN:  Macro variable I resolves to 1995
+SYMBOLGEN:  Macro variable I resolves to 1996
+SYMBOLGEN:  Macro variable I resolves to 1996
+446        	drop DMSP_1987-DMSP_1996;
+447        run;
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_97_07.
+24                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.DMSP_RATE_WIDE.
+NOTE: The data set WORK.SERVICE_87_07 has 86 observations and 22 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+448        
+449        
+450        /*--------------------------------------------------------
+451        Section 8, Find the 2008-forward Cost of services based on BEA data
+452        ----------------------------------------------------------*/
+453        /*Merge the title with the descriptions*/
+454        PROC SQL;
+455        	CREATE TABLE work.BEA3 AS
+456        	SELECT a.*, b.BEA_Code
+457        	FROM work.BEA2 a Left Join work.BEA_Codes2 b
+458        	on (a.Industry_Title=b.Title);
+NOTE: Table WORK.BEA3 created, with 100 rows and 26 columns.
+
+459        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+460        
+461        data work.BEA4;
+462        retain BEA_Code Industry_Title
+462      ! BEA_1997-BEA_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+463        set work.BEA3;
+464        	if substr(BEA_Code,1,1)^="3" then delete;
+465        run;
+
+NOTE: There were 100 observations read from the data set WORK.BEA3.
+NOTE: The data set WORK.BEA4 has 19 observations and 26 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+25                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      
+
+466        
+467        /*Find the ratio of year n divided by 1997*/
+468        data work.BEA_Rate (drop=i);
+469        set work.BEA4;
+470        	array aYear
+470      ! BEA_2007-BEA_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+471        	array aRate
+471      ! BEA_Rate_2007-BEA_Rate_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+472        	do i = 1 to dim(aYear);
+473        		aRate[i]=aYear[i]/aYear[1];
+474        	end;
+475        	drop BEA_1997-BEA_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+476        run;
+
+NOTE: There were 19 observations read from the data set WORK.BEA4.
+NOTE: The data set WORK.BEA_RATE has 19 observations and 16 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+477        
+478        /*Attach the BEA rates to the main cost of services file*/
+479        data work.Service_87_07_2;
+480        length NAICS_3 $6.;
+481        set work.Service_87_07;
+482        	NAICS_3=substr(NAICS,1,3);
+483        	if NAICS in ("3361", "3362", "3363") then NAICS_3="3361MV";
+484        	if NAICS in ("3364", "3365", "3366", "3369") then NAICS_3="3364OT";
+485        	if NAICS in ("3111", "3112", "3113", "3114", "3115", "3116", "3117", "3118", "3119", "3121", "3122") then
+485      ! NAICS_3="311FT";
+486        	if NAICS in ("3131", "3132", "3133", "3141", "3149") then NAICS_3="313TT";
+487        	if NAICS in ("3151", "3152", "3159", "3161", "3162", "3169") then NAICS_3="315AL";
+488        run;
+
+26                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_87_07.
+NOTE: The data set WORK.SERVICE_87_07_2 has 86 observations and 23 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+489        
+490        /*Merge the BEA rates to the Service dataset*/
+491        PROC SQL;
+492        	CREATE TABLE work.Service_87_&lastyear_2 AS
+SYMBOLGEN:  Macro variable LASTYEAR_2 resolves to 15
+493        	SELECT a.*, b.*
+494        	FROM work.Service_87_07_2 a Left Join work.Bea_rate b
+495        	ON (a.NAICS_3=b.BEA_Code);
+NOTE: Table WORK.SERVICE_87_15 created, with 86 rows and 39 columns.
+
+496        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable LASTYEAR_2 resolves to 15
+497        
+498        data work.Service_87_&lastyear_2._Prelim (drop= i NAICS_3 BEA_RATE_2007-BEA_RATE_&lastyear Industry_Title BEA_Code);
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+499        Retain NAICS
+499      ! Services_1987-Services_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+SYMBOLGEN:  Macro variable LASTYEAR_2 resolves to 15
+500        set work.Service_87_&lastyear_2;
+501        	array aServ
+501      ! Services_2008-Services_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+502        	array aRate
+502      ! BEA_Rate_2008-BEA_Rate_&lastyear;
+SYMBOLGEN:  Macro variable LASTYEAR resolves to 2015
+503        
+504        	do i=1 to dim(aServ);
+27                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+505        		aServ[i]=aRate[i]*Services_2007;
+506        	end;
+507        run;
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_87_15.
+NOTE: The data set WORK.SERVICE_87_15_PRELIM has 86 observations and 35 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+508        
+509        /*TRANSPOSE the Service file*/
+510        PROC SORT data=work.Service_87_&lastyear_2._Prelim;
+SYMBOLGEN:  Macro variable LASTYEAR_2 resolves to 15
+511        by NAICS;
+512        run;
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_87_15_PRELIM.
+NOTE: The data set WORK.SERVICE_87_15_PRELIM has 86 observations and 35 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+513        PROC TRANSPOSE data=work.Service_87_&lastyear_2._Prelim OUT=work.Service_Prelim_Flat prefix=Services_1987;
+SYMBOLGEN:  Macro variable LASTYEAR_2 resolves to 15
+514        by NAICS;
+515        RUN;
+
+NOTE: There were 86 observations read from the data set WORK.SERVICE_87_15_PRELIM.
+NOTE: The data set WORK.SERVICE_PRELIM_FLAT has 2494 observations and 3 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+516        data work.Service_Prelim_Flat2 (drop=_NAME_ rename=(Services_19871=value temp=year));
+517        retain NAICS DataSeriesCodeID Value Year;
+518        set work.Service_Prelim_Flat;
+28                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+519        	_NAME_=substr(_NAME_,10,4);
+520        	temp=input(_NAME_,8.);
+521        	DataSeriesCodeID="Pre_Serv";
+522        run;
+
+NOTE: Variable Value is uninitialized.
+NOTE: Variable Year is uninitialized.
+NOTE: There were 2494 observations read from the data set WORK.SERVICE_PRELIM_FLAT.
+NOTE: The data set WORK.SERVICE_PRELIM_FLAT2 has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+523        
+524        
+525        /*--------------------------------------------------------
+526        Section 9, Pull in other IP files Transpose them to be a flat file
+527        ----------------------------------------------------------*/
+528        /*Cost of Electricity*/
+529        data work.Elect_flat (rename=(CostofElectricity=Value));
+530        retain NAICS DataSeriesCodeID Value Year;
+531        set ip.costofelectricity;
+532        DataSeriesCodeID="CostElec";
+533        run;
+
+NOTE: Variable Value is uninitialized.
+NOTE: There were 2494 observations read from the data set IP.COSTOFELECTRICITY.
+NOTE: The data set WORK.ELECT_FLAT has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+534        
+535        /*Cost of Fuels*/
+536        data work.Fuels_flat (rename=(CostofFuels=Value));
+537        retain NAICS DataSeriesCodeID Value Year;
+538        set ip.costoffuels;
+539        DataSeriesCodeID="CostFuel";
+29                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+540        run;
+
+NOTE: Variable Value is uninitialized.
+NOTE: There were 2494 observations read from the data set IP.COSTOFFUELS.
+NOTE: The data set WORK.FUELS_FLAT has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+541        
+542        /*Cost of Supplies*/
+543        data work.Supplies_final_flat (rename=(CostofSupplies=Value));
+544        retain NAICS DataSeriesCodeID Value Year;
+545        set ip.costofsupplies;
+546        DataSeriesCodeID="CostSupl";
+547        run;
+
+NOTE: Variable Value is uninitialized.
+NOTE: There were 2494 observations read from the data set IP.COSTOFSUPPLIES.
+NOTE: The data set WORK.SUPPLIES_FINAL_FLAT has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+548        
+549        /*Capital Expenditures*/
+550        data work.CapEx1;
+551        set capital.naicscapexp;
+552        run;
+
+NOTE: There were 4988 observations read from the data set CAPITAL.NAICSCAPEXP.
+NOTE: The data set WORK.CAPEX1 has 4988 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+553        
+30                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+554        data work.CapEx1 (keep=NAICS year Total);
+555        set work.CapEx1;
+556        if Year>=1987 AND Year <2002 then output;
+557        run;
+
+NOTE: There were 4988 observations read from the data set WORK.CAPEX1.
+NOTE: The data set WORK.CAPEX1 has 1290 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+558        
+559        data work.CapEx2;
+560        set capital.newcapexp;
+561        run;
+
+NOTE: There were 1204 observations read from the data set CAPITAL.NEWCAPEXP.
+NOTE: The data set WORK.CAPEX2 has 1204 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+562        
+563        data work.CapEx2 (keep=NAICS year Total);
+564        set work.CapEx2;
+565        run;
+
+NOTE: There were 1204 observations read from the data set WORK.CAPEX2.
+NOTE: The data set WORK.CAPEX2 has 1204 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+566        
+567        data work.CapEx_all (drop=NAICS rename=(temp=NAICS));
+568        set work.CapEx1 work.CapEx2;
+569        temp=input(compress(NAICS),$4.);
+31                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+570        run;
+
+NOTE: There were 1290 observations read from the data set WORK.CAPEX1.
+NOTE: There were 1204 observations read from the data set WORK.CAPEX2.
+NOTE: The data set WORK.CAPEX_ALL has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+571        
+572        /* This part of the program pulls in the source data from IPS*/
+573        Libname SQL ODBC DSN=IPS2DB schema=sas;
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPS2DB
+574        
+575        /*Create macro variables for first and last year of data*/
+576        data _null_;
+577              set sql.update (where=(updateid=&updateid));
+SYMBOLGEN:  Macro variable UPDATEID resolves to 212
+578              call symput('updatestatusid', updatestatusid);
+579        run;
+
+NOTE: There were 1 observations read from the data set SQL.update.
+      WHERE updateid=212;
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable UPDATESTATUSID resolves to Loading     
+580        
+581        %let dataset = %sysfunc(ifc(&updatestatusid=Loading,sql.reportbuilder_preliminary,sql.reportbuilder_current));
+582        %put &dataset;
+SYMBOLGEN:  Macro variable DATASET resolves to sql.reportbuilder_preliminary
+sql.reportbuilder_preliminary
+583        
+584        /*Read in ValProd and LComp files*/
+585        Proc sql;
+32                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+586        	Create table 	work.valprod_lcomp as
+587        	select Distinct Industry as NAICS, DataSeries as DataSeriesCodeID, DataSeriesID, Year, Value
+588        	from 			&dataset
+SYMBOLGEN:  Macro variable DATASET resolves to sql.reportbuilder_preliminary
+589        	where 			(UpdateID=&updateid) and DataSeriesID in ('T30','L02') and (substr(IndustryID,3,1)="3") and DigitID =
+589      ! "4-Digit"
+SYMBOLGEN:  Macro variable UPDATEID resolves to 212
+590        	order by 		NAICS, DataSeriesID, Year;
+NOTE: Table WORK.VALPROD_LCOMP created, with 5160 rows and 5 columns.
+
+591        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.60 seconds
+      cpu time            0.03 seconds
+      
+
+592        
+593        proc sql;
+594        	create table 	work.ValProd as
+595        	select			*
+596        	from 			work.valprod_lcomp
+597        	where 			DataSeriesID = "T30"
+598        	order by 		NAICS, Year;
+NOTE: Table WORK.VALPROD created, with 2580 rows and 5 columns.
+
+599        
+600        	create table 	work.LComp as
+601        	select 			*
+602        	from 			work.valprod_lcomp
+603        	where 			DataSeriesID = "L02"
+604        	order by 		NAICS, Year;
+NOTE: Table WORK.LCOMP created, with 2580 rows and 5 columns.
+
+605        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+606        
+33                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+607        /*Subtract ValProd minus LComp minus Cost of Supplies minus Fuels minus Elec minus Services (prelim). This is cost*/
+608        /*of capital (prelim).*/
+609        
+610        PROC SQL;
+611        	CREATE TABLE work.CapCost_Prelim AS
+612        	SELECT a.NAICS, "Pre_CapC" as DataSeriesCodeID, a.Value-b.Value-c.Value/1000-d.Value/1000-e.Value/1000-f.Value/1000
+612      ! as Value, a.year
+613        	FROM work.ValProd a inner join work.LComp b
+614        		ON (a.NAICS=b.NAICS) AND (a.Year=b.Year)
+615        			INNER JOIN work.Elect_flat c
+616        			on (a.NAICS=c.NAICS) AND (a.Year=c.Year)
+617        				INNER JOIN work.Fuels_flat d
+618        				on (a.NAICS=d.NAICS) and (a.Year=d.Year)
+619        					INNER JOIN work.supplies_final_flat e
+620        					on (a.NAICS=e.NAICS) AND (a.Year=e.Year)
+621        						INNER JOIN work.service_prelim_flat2 f
+622        						ON (a.NAICS=f.NAICS) and (a.Year=f.Year);
+NOTE: Table WORK.CAPCOST_PRELIM created, with 2494 rows and 4 columns.
+
+623        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+624        
+625        /* Write-out file with Preliminary CapCost, including negative values */
+626        data work.CapCost_Prelim_analysis;
+627        	retain NAICS DataSeriesCodeID Year Value;
+628        	length NAICS $8;
+629        	set work.CapCost_Prelim;
+630        run;
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 2494 observations read from the data set WORK.CAPCOST_PRELIM.
+NOTE: The data set WORK.CAPCOST_PRELIM_ANALYSIS has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+34                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+631        
+632        data work.CapCost_Prelim_negative;
+633        	set work.CapCost_Prelim_analysis;
+634        	if Value>0 then delete;
+635        run;
+
+NOTE: There were 2494 observations read from the data set WORK.CAPCOST_PRELIM_ANALYSIS.
+NOTE: The data set WORK.CAPCOST_PRELIM_NEGATIVE has 44 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+636        
+637        proc export
+638        	data=work.CapCost_Prelim_analysis
+639        	outfile="J:\SAS Testing\MFP Re-write\Output Data\CapCost_prelim.xlsx"
+640        	DBMS=xlsx replace;
+641        	sheet="CapCost_prelim";
+642        quit;
+
+NOTE: The export data set has 2494 observations and 4 variables.
+NOTE: "J:\SAS Testing\MFP Re-write\Output Data\CapCost_prelim.xlsx" file was successfully created.
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.07 seconds
+      
+
+643        
+644        proc export
+645        	data=work.CapCost_Prelim_negative
+646        	outfile="J:\SAS Testing\MFP Re-write\Output Data\CapCost_prelim.xlsx"
+647        	DBMS=xlsx replace;
+648        	sheet="CapCost_prelim_negative";
+649        quit;
+
+NOTE: The export data set has 44 observations and 4 variables.
+NOTE: "J:\SAS Testing\MFP Re-write\Output Data\CapCost_prelim.xlsx" file was successfully created.
+NOTE: PROCEDURE EXPORT used (Total process time):
+35                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      real time           0.10 seconds
+      cpu time            0.04 seconds
+      
+
+650        
+651        /*Now, if the CapCost_Prelim is less than 0, then set CapCost equal to CapExpenditure*/
+652        PROC SQL;
+653        	CREATE TABLE work.CapCost_Adjust AS
+654        	SELECT a.NAICS, "CapCostF" as DataSeriesCodeID, (case when a.Value<0 then b.Total ELSE a.Value END) as Value, a.year
+655        	FROM work.CapCost_prelim a inner join work.CapEx_all b
+656        	ON (a.NAICS=b.NAICS) and (a.year=b.year);
+NOTE: Table WORK.CAPCOST_ADJUST created, with 2494 rows and 4 columns.
+
+657        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+658        
+659        /*Now, the adjusted cost of services is equal to Service_prelim_flat2-(capcost_adjust-CapCost_prelim)*/
+660        PROC SQL;
+661        	CREATE TABLE work.Service_Final AS
+662        	SELECT a.NAICS, "Serv_Fin" as DataSeriesCodeID, (a.value-(b.value-c.value)*1000) as value, a.year
+663        	FROM work.Service_prelim_flat2 a Inner Join work.CapCost_adjust b
+664        	ON (a.NAICS=b.NAICS) and (a.Year=b.Year)
+665        		INNER JOIN work.CapCost_prelim c
+666        		ON (a.NAICS=c.NAICS) and (a.Year=c.Year);
+NOTE: Table WORK.SERVICE_FINAL created, with 2494 rows and 4 columns.
+
+666      !                                            	
+667        QUIT;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+668        
+669        PROC Sort data=work.service_Final;
+670        by NAICS year;
+36                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+671        run;
+
+NOTE: Input data set is already sorted, no sorting done.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+672        
+673        /*Save Final Cost of Services to IP SAS Library*/
+674        data ip.Cost_Srv;
+675        set work.service_final;
+676        run;
+
+NOTE: There were 2494 observations read from the data set WORK.SERVICE_FINAL.
+NOTE: The data set IP.COST_SRV has 2494 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+677        
+678        proc datasets library=work kill noprint;
+NOTE: Deleting WORK.BEA (memtype=DATA).
+NOTE: Deleting WORK.BEA2 (memtype=DATA).
+NOTE: Deleting WORK.BEA3 (memtype=DATA).
+NOTE: Deleting WORK.BEA4 (memtype=DATA).
+NOTE: Deleting WORK.BEA_CODES (memtype=DATA).
+NOTE: Deleting WORK.BEA_CODES2 (memtype=DATA).
+NOTE: Deleting WORK.BEA_RATE (memtype=DATA).
+NOTE: Deleting WORK.CAPCOST_ADJUST (memtype=DATA).
+NOTE: Deleting WORK.CAPCOST_PRELIM (memtype=DATA).
+NOTE: Deleting WORK.CAPCOST_PRELIM_ANALYSIS (memtype=DATA).
+NOTE: Deleting WORK.CAPCOST_PRELIM_NEGATIVE (memtype=DATA).
+NOTE: Deleting WORK.CAPEX1 (memtype=DATA).
+NOTE: Deleting WORK.CAPEX2 (memtype=DATA).
+NOTE: Deleting WORK.CAPEX_ALL (memtype=DATA).
+NOTE: Deleting WORK.CLASS (memtype=DATA).
+NOTE: Deleting WORK.DMSP_DATA (memtype=DATA).
+NOTE: Deleting WORK.DMSP_DATA2 (memtype=DATA).
+37                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Deleting WORK.DMSP_DATA3 (memtype=DATA).
+NOTE: Deleting WORK.DMSP_MEASURE (memtype=DATA).
+NOTE: Deleting WORK.DMSP_RATE (memtype=DATA).
+NOTE: Deleting WORK.DMSP_RATE2 (memtype=DATA).
+NOTE: Deleting WORK.DMSP_RATE_WIDE (memtype=DATA).
+NOTE: Deleting WORK.DMSP_SECTOR (memtype=DATA).
+NOTE: Deleting WORK.ELECT_FLAT (memtype=DATA).
+NOTE: Deleting WORK.FUELS_FLAT (memtype=DATA).
+NOTE: Deleting WORK.IO02 (memtype=DATA).
+NOTE: Deleting WORK.IO02_MATCH (memtype=DATA).
+NOTE: Deleting WORK.IO02_SUM (memtype=DATA).
+NOTE: Deleting WORK.IO07 (memtype=DATA).
+NOTE: Deleting WORK.IO07_MATCH (memtype=DATA).
+NOTE: Deleting WORK.IO07_SUM (memtype=DATA).
+NOTE: Deleting WORK.IO97 (memtype=DATA).
+NOTE: Deleting WORK.IO97_MATCH (memtype=DATA).
+NOTE: Deleting WORK.IO97_SUM (memtype=DATA).
+NOTE: Deleting WORK.LCOMP (memtype=DATA).
+NOTE: Deleting WORK.NAICS_IPS (memtype=DATA).
+NOTE: Deleting WORK.SASMACR (memtype=CATALOG).
+NOTE: File WORK.SASMACR (memtype=CATALOG) cannot be deleted because it is in use.
+NOTE: Deleting WORK.SERFAC97_07 (memtype=DATA).
+NOTE: Deleting WORK.SERFAC97_07_INTER (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_87_07 (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_87_07_2 (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_87_15 (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_87_15_PRELIM (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_97_07 (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_FINAL (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_PRELIM_FLAT (memtype=DATA).
+NOTE: Deleting WORK.SERVICE_PRELIM_FLAT2 (memtype=DATA).
+NOTE: Deleting WORK.SUPPLIES_FINAL_FLAT (memtype=DATA).
+NOTE: Deleting WORK.SUPPLIES_RAW (memtype=DATA).
+NOTE: Deleting WORK.SUPPLIES_RAWFLAT (memtype=DATA).
+NOTE: Deleting WORK.VALPROD (memtype=DATA).
+NOTE: Deleting WORK.VALPROD_LCOMP (memtype=DATA).
+679        run;
+
+680        quit;
+
+38                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.07 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           8.80 seconds
+      cpu time            5.89 seconds
+      

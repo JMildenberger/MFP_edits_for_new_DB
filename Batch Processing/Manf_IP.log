@@ -1,0 +1,1558 @@
+1                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.57 seconds
+      cpu time            0.37 seconds
+      
+1          /* Program: MFP IP Macros
+2             Last updated: May 19, 2017 */
+3          
+4          libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+5          
+6          /*Creates a macro variables from textfile*/
+7          data _null_;
+8                length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+9                infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+10               input updateid firstyr lastyr baseperiod;
+11               call symput('first', trim(left(put(firstyr, 4.))));
+12               call symput('last', trim(left(put(lastyr, 4.))));
+13         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+2                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+14         
+15         /*Macro variables for second and second-to-last years*/
+16         %let second = &first + 1;
+17         %let secondtolast = &last - 1;
+18         
+19         /* Import MFP Price Files from Excel */
+20         libname MFP XLSX 'R:\MFP DataSets\Manufacturing\IP\SAS Inputs\MFP IP Price Files.xlsx';
+NOTE: Libref MFP was successfully assigned as follows: 
+      Engine:        XLSX 
+      Physical Name: R:\MFP DataSets\Manufacturing\IP\SAS Inputs\MFP IP Price Files.xlsx
+21         
+22         data work.Price_Fuels; /* To be read-in from SAS library in the future */
+23         	set MFP.Price_Fuels;
+24         run;
+
+NOTE: The import data set has 2494 observations and 3 variables.
+NOTE: There were 2494 observations read from the data set MFP.Price_Fuels.
+NOTE: The data set WORK.PRICE_FUELS has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.07 seconds
+      
+
+25         
+26         data work.Price_Mat;  /* Read-in from SAS library */
+27         	set IP.Price_Mat;
+28         run;
+3                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: There were 2494 observations read from the data set IP.PRICE_MAT.
+NOTE: The data set WORK.PRICE_MAT has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+29         
+30         data work.Price_Srv; /* Read-in from SAS library */
+31         	set IP.Price_Srv;
+32         run;
+
+NOTE: There were 2494 observations read from the data set IP.PRICE_SRV.
+NOTE: The data set WORK.PRICE_SRV has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.04 seconds
+      
+
+33         
+34         
+35         /* Transpose Datasets for IP Macro Calculations */
+36         
+37         /*Cost of Electricity*/
+38         proc sort data=IP.CostofElectricity;
+39         by naics;
+40         run;
+
+NOTE: Input data set is already sorted, no sorting done.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+41         
+42         proc transpose data=IP.CostofElectricity out=work.CostofElectricity prefix=CostOfElectricity;
+43         by naics;
+44         id year;
+45         run;
+4                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: There were 2494 observations read from the data set IP.COSTOFELECTRICITY.
+NOTE: The data set WORK.COSTOFELECTRICITY has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+46         
+47         /*Quantity of Electricity*/
+48         proc sort data=IP.Quanofelectricity;
+49         by naics;
+50         run;
+
+NOTE: Input data set is already sorted, no sorting done.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+51         
+52         proc transpose data=IP.Quanofelectricity out=work.Quanofelectricity prefix=QuanOfElectricity;
+53         by naics;
+54         id year;
+55         run;
+
+NOTE: There were 2494 observations read from the data set IP.QUANOFELECTRICITY.
+NOTE: The data set WORK.QUANOFELECTRICITY has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+56         
+57         /*Cost of Fuels*/
+58         proc sort data=IP.CostofFuels;
+59         by naics;
+60         run;
+
+NOTE: Input data set is already sorted, no sorting done.
+5                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+61         
+62         proc transpose data=IP.CostofFuels out=work.CostofFuels prefix=CostOfFuels;
+63         by naics;
+64         id year;
+65         run;
+
+NOTE: There were 2494 observations read from the data set IP.COSTOFFUELS.
+NOTE: The data set WORK.COSTOFFUELS has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+66         
+67         /*Cost of Supplies*/
+68         proc sort data=IP.CostofSupplies;
+69         by naics;
+70         run;
+
+NOTE: Input data set is already sorted, no sorting done.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+71         
+72         proc transpose data=IP.CostofSupplies out=work.CostofSupplies prefix=CostOfSupplies;
+73         by naics;
+74         id year;
+75         run;
+
+NOTE: There were 2494 observations read from the data set IP.COSTOFSUPPLIES.
+NOTE: The data set WORK.COSTOFSUPPLIES has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+6                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            0.03 seconds
+      
+
+76         
+77         /*Cost of Services*/
+78         proc sort data=IP.Cost_Srv;
+79         by naics;
+80         run;
+
+NOTE: There were 2494 observations read from the data set IP.COST_SRV.
+NOTE: The data set IP.COST_SRV has 2494 observations and 4 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.00 seconds
+      
+
+81         
+82         proc transpose data=IP.Cost_Srv out=work.CostofServices prefix=CostOfServices;
+83         by naics;
+84         id year;
+85         run;
+
+NOTE: There were 2494 observations read from the data set IP.COST_SRV.
+NOTE: The data set WORK.COSTOFSERVICES has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+86         
+87         /*Price of Fuels*/
+88         proc sort data=work.Price_Fuels;
+89         by naics;
+90         run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_FUELS.
+NOTE: The data set WORK.PRICE_FUELS has 2494 observations and 3 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+7                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+      
+
+91         
+92         proc transpose data=work.Price_Fuels out=work.PriceofFuels prefix=PriceOfFuels;
+93         by naics;
+94         id year;
+95         run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_FUELS.
+NOTE: The data set WORK.PRICEOFFUELS has 86 observations and 32 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+96         
+97         /*Price of Materials*/
+98         proc sort data=work.Price_Mat;
+99         by naics;
+100        run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_MAT.
+NOTE: The data set WORK.PRICE_MAT has 2494 observations and 3 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+101        
+102        proc transpose data=work.Price_Mat out=work.PriceofSupplies prefix=PriceOfSupplies;
+103        by naics;
+104        id year;
+105        run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_MAT.
+NOTE: The data set WORK.PRICEOFSUPPLIES has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+8                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+
+106        
+107        /*Price of Services*/
+108        proc sort data=work.Price_Srv;
+109        by naics;
+110        run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_SRV.
+NOTE: The data set WORK.PRICE_SRV has 2494 observations and 3 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+111        
+112        proc transpose data=work.Price_Srv out=work.PriceofServices prefix=PriceOfServices;
+113        by naics;
+114        id year;
+115        run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_SRV.
+NOTE: The data set WORK.PRICEOFSERVICES has 86 observations and 31 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+116        
+117        /*Price of Electricity (Index): Divide Cost of Electrity by Quantity of Electricity*/
+118        %MACRO PRICEOFELECTRICTY(first, last);
+119        	data work.priceofelectricity (keep = NAICS PriceOfElectricity:);
+120        		merge work.costofelectricity work.quanofelectricity;
+121        				FirstPriceOfElectricity&first = (CostOfElectricity&first / QuanOfElectricity&first);
+122        		%do i = &first %to &last;
+123        				PriceOfElectricity&i = ((CostOfElectricity&i / QuanOfElectricity&i) / FirstPriceOfElectricity&first) * 100;
+124        		%end;
+125        	run;
+126        %MEND PRICEOFELECTRICTY;
+127        %PRICEOFELECTRICTY(first=&first, last=&last);
+
+9                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: There were 86 observations read from the data set WORK.QUANOFELECTRICITY.
+NOTE: The data set WORK.PRICEOFELECTRICITY has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+128        
+129        /*Merge of CostFiles*/
+130        data work.costmerge (Drop=_Name_);
+131        	merge work.costoffuels work.costofsupplies work.costofelectricity work.costofservices;
+132        run;
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+WARNING: Multiple lengths were specified for the variable _NAME_ by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: The data set WORK.COSTMERGE has 86 observations and 117 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+133        
+134        /*Cost of Fuels Value Shares*/
+135        %MACRO CFSHARES;
+136        data work.cfshares(Keep=NAICS y:);
+137        	set work.costmerge;
+138        	%do i = &first %to &last;
+139        	y&i=costoffuels&i/(costoffuels&i+costofsupplies&i+costofelectricity&i+costofservices&i);
+140        	%end;
+141        run;
+142        %MEND CFSHARES;
+143        %CFSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.CFSHARES has 86 observations and 30 variables.
+10                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+144        
+145        /*Cost of Supplies Value Shares*/
+146        %MACRO CSUPPSHARES;
+147        data work.csuppshares(Keep=NAICS y:);
+148        	set work.costmerge;
+149        	%do i = &first %to &last;
+150        	y&i=costofsupplies&i/(costoffuels&i+costofsupplies&i+costofelectricity&i+costofservices&i);
+151        	%end;
+152        run;
+153        %MEND CSUPPSHARES;
+154        %CSUPPSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.CSUPPSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+155        
+156        /*Cost of Electricity Value Shares*/
+157        %MACRO CESHARES;
+158        data work.ceshares(Keep=NAICS y:);
+159        	set work.costmerge;
+160        	%do i = &first %to &last;
+161        	y&i=costofelectricity&i/(costoffuels&i+costofsupplies&i+costofelectricity&i+costofservices&i);
+162        	%end;
+163        run;
+164        %MEND CESHARES;
+165        %CESHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.CESHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+11                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+166        
+167        /*Cost of Services Value Shares*/
+168        %MACRO CSERVSHARES;
+169        data work.cservshares(Keep=NAICS y:);
+170        	set work.costmerge;
+171        	%do i = &first %to &last;
+172        	y&i=costofservices&i/(costoffuels&i+costofsupplies&i+costofelectricity&i+costofservices&i);
+173        	%end;
+174        run;
+175        %MEND CSERVSHARES;
+176        %CSERVSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.CSERVSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+177        
+178        /*CostOfFuels Index*/
+179        %MACRO COSTOFFUELSINDEX (first, last);
+180        data work.costoffuelsindex (keep=NAICS costoffuelsi:);
+181        	set work.costoffuels;
+182        	%do i = &first %to &last;
+183            costoffuelsi&i= (costoffuels&i / costoffuels&first) * 100;
+184        	%end;
+185        run;
+186        %MEND COSTOFFUELSINDEX;
+187        %COSTOFFUELSINDEX(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: The data set WORK.COSTOFFUELSINDEX has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+12                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+188        
+189        /*CostOfSupplies Index*/
+190        %MACRO COSTOFSUPPLIESINDEX (first, last);
+191        data work.costofsuppliesindex (keep=NAICS costofsuppliesi:);
+192        	set work.costofsupplies;
+193        	%do i = &first %to &last;
+194            costofsuppliesi&i= (costofsupplies&i / costofsupplies&first) * 100;
+195        	%end;
+196        run;
+197        %MEND COSTOFSUPPLIESINDEX;
+198        %COSTOFSUPPLIESINDEX(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: The data set WORK.COSTOFSUPPLIESINDEX has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+199        
+200        /*CostOfElectricity Index*/
+201        %MACRO COSTOFELECTRICITYINDEX (first, last);
+202        data work.costofelectricityindex (keep=NAICS costofelectricityi:);
+203        	set work.costofelectricity;
+204        	%do i = &first %to &last;
+205            costofelectricityi&i= (costofelectricity&i / costofelectricity&first) * 100;
+206        	%end;
+207        run;
+208        %MEND COSTOFELECTRICITYINDEX;
+209        %COSTOFELECTRICITYINDEX(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: The data set WORK.COSTOFELECTRICITYINDEX has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+210        
+13                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+211        /*CostOfServices Index*/
+212        %MACRO COSTOFSERVICESINDEX (first, last);
+213        data work.costofservicesindex (keep=NAICS costofservicesi:);
+214        	set work.costofservices;
+215        	%do i = &first %to &last;
+216            costofservicesi&i= (costofservices&i / costofservices&first) * 100;
+217        	%end;
+218        run;
+219        %MEND COSTOFSERVICESINDEX;
+220        %COSTOFSERVICESINDEX(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: The data set WORK.COSTOFSERVICESINDEX has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+221        
+222        /*CostOfFuelsquan*/
+223        %MACRO cfquan;
+224        data work.costoffuelsquan(Keep=NAICS y:);
+225        	merge work.costoffuelsindex work.priceoffuels;
+226        	%do i = &first %to &last;
+227        	y&i=(costoffuelsi&i/priceoffuels&i)*100;
+228        	%end;
+229        run;
+230        %MEND cfquan;
+231        %cfquan;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELSINDEX.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFFUELS.
+NOTE: The data set WORK.COSTOFFUELSQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+232        
+233        /*CostOfSuppliesquan*/
+14                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+234        %MACRO csquan;
+235        data work.costofsuppliesquan(Keep=NAICS y:);
+236        	merge work.costofsuppliesindex work.priceofsupplies;
+237        	%do i = &first %to &last;
+238        	y&i=(costofsuppliesi&i/priceofsupplies&i)*100;
+239        	%end;
+240        run;
+241        %MEND csquan;
+242        %csquan;
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIESINDEX.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFSUPPLIES.
+NOTE: The data set WORK.COSTOFSUPPLIESQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+243        
+244        /*CostOfElectricityquan*/
+245        %MACRO cequan;
+246        data work.costofelectricityquan(Keep=NAICS y:);
+247        	merge work.costofelectricityindex work.priceofelectricity;
+248        	%do i = &first %to &last;
+249        	y&i=(costofelectricityi&i/priceofelectricity&i)*100;
+250        	%end;
+251        run;
+252        %MEND cequan;
+253        %cequan;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITYINDEX.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFELECTRICITY.
+NOTE: The data set WORK.COSTOFELECTRICITYQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+254        
+15                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+255        /*CostOfServicesquan*/
+256        %MACRO cservquan;
+257        data work.costofservicesquan(Keep=NAICS y:);
+258        	merge work.costofservicesindex work.priceofservices;
+259        	%do i = &first %to &last;
+260        	y&i=(costofservicesi&i/priceofservices&i)*100;
+261        	%end;
+262        run;
+263        %MEND cservquan;
+264        %cservquan;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICESINDEX.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFSERVICES.
+NOTE: The data set WORK.COSTOFSERVICESQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+265        
+266        /*FuelsLnDiff*/
+267        %MACRO fuelslndiff (first, second, secondtolast, last);
+268        data work.fuelslndiff;
+269        	set work.costoffuelsquan;	
+270        	%do year2 = &second %to &last;
+271        		%do year = &first %to &secondtolast;
+272        		if &year2 = &year + 1 then
+273        		fuelslndiff&year2 = log(y&year2) - log(y&year);
+274        		keep NAICS fuelslndiff&year2;
+275        		%end;
+276        	%end;
+277        run;
+278        %MEND fuelslndiff;
+279        %fuelslndiff(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELSQUAN.
+NOTE: The data set WORK.FUELSLNDIFF has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+16                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      
+
+280        
+281        /*SuppliesLnDiff*/
+282        %MACRO supplieslndiff (first, second, secondtolast, last);
+283        data work.supplieslndiff;
+284        	set work.costofsuppliesquan;	
+285        	%do year2 = &second %to &last;
+286        		%do year = &first %to &secondtolast;
+287        		if &year2 = &year + 1 then
+288        		supplndiff&year2 = log(y&year2) -  log(y&year);
+289        		keep NAICS supplndiff&year2;
+290        		%end;
+291        	%end;
+292        run;
+293        %MEND supplieslndiff;
+294        %supplieslndiff(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIESQUAN.
+NOTE: The data set WORK.SUPPLIESLNDIFF has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.07 seconds
+      
+
+295        
+296        /*ElectricityLnDiff*/
+297        %MACRO electricitylndiff (first, second, secondtolast, last);
+298        data work.electricitylndiff;
+299        	set work.costofelectricityquan;	
+300        	%do year2 = &second %to &last;
+301        		%do year = &first %to &secondtolast;
+302        		if &year2 = &year + 1 then
+303        		eleclndiff&year2 = log(y&year2) - log(y&year);
+304        		keep NAICS eleclndiff&year2;
+305        		%end;
+306        	%end;
+307        run;
+308        %MEND electricitylndiff;
+309        %electricitylndiff(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+17                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITYQUAN.
+NOTE: The data set WORK.ELECTRICITYLNDIFF has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.07 seconds
+      
+
+310        
+311        /*ServicesLnDiff*/
+312        %MACRO serviceslndiff (first, second, secondtolast, last);
+313        data work.serviceslndiff;
+314        	set work.costofservicesquan;	
+315        	%do year2 = &second %to &last;
+316        		%do year = &first %to &secondtolast;
+317        		if &year2 = &year + 1 then
+318        		servlndiff&year2 = log(y&year2) - log(y&year);
+319        		keep NAICS servlndiff&year2;
+320        		%end;
+321        	%end;
+322        run;
+323        %MEND serviceslndiff;
+324        %serviceslndiff(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICESQUAN.
+NOTE: The data set WORK.SERVICESLNDIFF has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.06 seconds
+      
+
+325        
+326        /*FuelsAvgValShares*/
+327        %MACRO fuelsavgvalshares (first, second, secondtolast, last);
+328        data work.fuelsavgvalshares;
+329        	set work.cfshares;	
+330        	%do year2 = &second %to &last;
+331        		%do year = &first %to &secondtolast;
+332        		if &year2 = &year + 1 then
+333        		fuelsavgvalshare&year2 = (y&year + y&year2)/ 2;
+18                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+334        		keep NAICS fuelsavgvalshare&year2;
+335        		%end;
+336        	%end;
+337        run;
+338        %MEND fuelsavgvalshares;
+339        %fuelsavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.CFSHARES.
+NOTE: The data set WORK.FUELSAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+340        
+341        /*SuppliesAvgValShares*/
+342        %MACRO suppliesavgvalshares (first, second, secondtolast, last);
+343        data work.suppliesavgvalshares;
+344        	set work.csuppshares;	
+345        	%do year2 = &second %to &last;
+346        		%do year = &first %to &secondtolast;
+347        		if &year2 = &year + 1 then
+348        		suppavgvalshare&year2 = (y&year + y&year2)/ 2;
+349        		keep NAICS suppavgvalshare&year2;
+350        		%end;
+351        	%end;
+352        run;
+353        %MEND suppliesavgvalshares;
+354        %suppliesavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.CSUPPSHARES.
+NOTE: The data set WORK.SUPPLIESAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.07 seconds
+      
+
+355        
+356        /*ElectricityAvgValShares*/
+357        %MACRO electricityavgvalshares (first, second, secondtolast, last);
+19                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+358        data work.electricityavgvalshares;
+359        	set work.ceshares;	
+360        	%do year2 = &second %to &last;
+361        		%do year = &first %to &secondtolast;
+362        		if &year2 = &year + 1 then
+363        		elecavgvalshare&year2 = (y&year + y&year2)/ 2;
+364        		keep NAICS elecavgvalshare&year2;
+365        		%end;
+366        	%end;
+367        run;
+368        %MEND electricityavgvalshares;
+369        %electricityavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.CESHARES.
+NOTE: The data set WORK.ELECTRICITYAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.06 seconds
+      
+
+370        
+371        /*ServicesAvgValShares*/
+372        %MACRO servicesavgvalshares (first, second, secondtolast, last);
+373        data work.servicesavgvalshares;
+374        	set work.cservshares;	
+375        	%do year2 = &second %to &last;
+376        		%do year = &first %to &secondtolast;
+377        		if &year2 = &year + 1 then
+378        		servavgvalshare&year2 = (y&year + y&year2)/ 2;
+379        		keep NAICS servavgvalshare&year2;
+380        		%end;
+381        	%end;
+382        run;
+383        %MEND servicesavgvalshares;
+384        %servicesavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.CSERVSHARES.
+NOTE: The data set WORK.SERVICESAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+20                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            0.07 seconds
+      
+
+385        
+386        /*WeightedIP (LnDiff are multiplied by share weights and then EXP is taken)*/
+387        %MACRO weightedIP (first, last);
+388        data work.weightedIP (keep=NAICS y:);
+389        	merge work.fuelslndiff work.supplieslndiff work.electricitylndiff work.serviceslndiff
+390        		  work.fuelsavgvalshares work.suppliesavgvalshares work.electricityavgvalshares work.servicesavgvalshares;
+391        	by NAICS;
+392        	%do i = &first %to &last;
+393            y&i= exp( (fuelslndiff&i * fuelsavgvalshare&i) + (supplndiff&i * suppavgvalshare&i) +
+394        			(eleclndiff&i * elecavgvalshare&i) +(servlndiff&i * servavgvalshare&i) );
+395        	%end;
+396        	y&first=100;
+397        run;
+398        %MEND weightedIP;
+399        %weightedIP(first=&first, last=&last);
+
+NOTE: Variable fuelsavgvalshare1987 is uninitialized.
+NOTE: Variable fuelslndiff1987 is uninitialized.
+NOTE: Variable suppavgvalshare1987 is uninitialized.
+NOTE: Variable supplndiff1987 is uninitialized.
+NOTE: Variable elecavgvalshare1987 is uninitialized.
+NOTE: Variable eleclndiff1987 is uninitialized.
+NOTE: Variable servavgvalshare1987 is uninitialized.
+NOTE: Variable servlndiff1987 is uninitialized.
+WARNING: Multiple lengths were specified for the BY variable NAICS by input data sets. This might cause unexpected results.
+NOTE: Missing values were generated as a result of performing an operation on missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      86 at 399:11    86 at 399:31    86 at 399:53    86 at 399:69    86 at 399:90    86 at 399:110   86 at 399:131
+      86 at 399:146   
+NOTE: There were 86 observations read from the data set WORK.FUELSLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.SUPPLIESLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.ELECTRICITYLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.SERVICESLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.FUELSAVGVALSHARES.
+NOTE: There were 86 observations read from the data set WORK.SUPPLIESAVGVALSHARES.
+NOTE: There were 86 observations read from the data set WORK.ELECTRICITYAVGVALSHARES.
+NOTE: There were 86 observations read from the data set WORK.SERVICESAVGVALSHARES.
+21                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The data set WORK.WEIGHTEDIP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+400        
+401        /*IPIND*/
+402        %MACRO INTPRCH (first, second, secondtolast, last);
+403        data IP.INTPRCH (keep= NAICS y:);
+404        	set work.weightedIP;
+405        	%do year2 = &second %to &last;
+406        			%do year = &first %to &secondtolast;
+407        				if &year2 = &year + 1 then
+408        				y&year2 = y&year2 * y&year;
+409        			%end;
+410        	%end;
+411        run;
+412        %MEND INTPRCH;
+413        %INTPRCH(first=&first, second=&second, secondtolast=&secondtolast,last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.WEIGHTEDIP.
+NOTE: The data set IP.INTPRCH has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+414        
+415        
+416        /*IP COMP*********************************************************************************/
+417        /*All Comp files are assuming numbers from Census in thousands - convert them to millions*/
+418        %MACRO IPComp (first, last);
+419        data IP.IPComp (keep=NAICS y:);
+420        	merge work.costoffuels work.costofsupplies work.costofelectricity work.costofservices;
+421        	%do i = &first %to &last;
+422            y&i= (CostOfFuels&i + CostOfSupplies&i + CostOfElectricity&i + CostOfServices&i) / 1000;
+423        	%end;
+424        run;
+425        %MEND IPComp;
+22                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+426        %IPComp(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+WARNING: Multiple lengths were specified for the variable _NAME_ by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: The data set IP.IPCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+427        
+428        /*Fuels Comp*/
+429        %MACRO FUELSComp (first, last);
+430        data IP.FUELSComp (keep=NAICS y:);
+431        	set work.costoffuels;
+432        	%do i = &first %to &last;
+433            y&i= CostOfFuels&i / 1000;
+434        	%end;
+435        run;
+436        %MEND FUELSComp;
+437        %FUELSComp(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: The data set IP.FUELSCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+438        
+439        /*Supplies Comp*/
+440        %MACRO SUPPLIESComp (first, last);
+441        data IP.MatComp (keep=NAICS y:);
+442        	set work.costofsupplies;
+443        	%do i = &first %to &last;
+444            y&i= CostOfSupplies&i / 1000;
+23                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+445        	%end;
+446        run;
+447        %MEND SUPPLIESComp;
+448        %SUPPLIESComp(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: The data set IP.MATCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+449        
+450        /*Electricity Comp*/
+451        %MACRO ELECTRICITYComp (first, last);
+452        data IP.ElectComp (keep=NAICS y:);
+453        	set work.costofelectricity;
+454        	%do i = &first %to &last;
+455            y&i= CostOfElectricity&i / 1000;
+456        	%end;
+457        run;
+458        %MEND ELECTRICITYComp;
+459        %ELECTRICITYComp(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: The data set IP.ELECTCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+460        
+461        /*Services Comp*/
+462        %MACRO SERVICESComp (first, last);
+463        data IP.SrvComp (keep=NAICS y:);
+464        	set work.costofservices;
+465        	%do i = &first %to &last;
+466            y&i= CostOfServices&i / 1000;
+467        	%end;
+468        run;
+24                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+469        %MEND SERVICESComp;
+470        %SERVICESComp(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: The data set IP.SRVCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+471        
+472        /*Fuels and Electricity Comp*/
+473        %MACRO ENERGYComp (first, last);
+474        data IP.energycomp (keep=NAICS y:);
+475        	merge work.costoffuels work.costofelectricity;
+476        	%do i = &first %to &last;
+477            y&i= (CostOfFuels&i + CostOfElectricity&i ) / 1000;
+478        	%end;
+479        run;
+480        %MEND ENERGYComp;
+481        %ENERGYComp(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable _NAME_ by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: The data set IP.ENERGYCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+482        
+483        /*Materials and Services Comp*/
+484        %MACRO MATSRVComp (first, last);
+485        data IP.matsrvcomp (keep=NAICS y:);
+486        	merge work.costofsupplies work.costofservices;
+487        	%do i = &first %to &last;
+488            y&i= (CostOfSupplies&i + CostOfServices&i ) / 1000;
+489        	%end;
+490        run;
+25                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+491        %MEND MATSRVComp;
+492        %MATSRVComp(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: The data set IP.MATSRVCOMP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+493        
+494        /*Materials and Fuels Deflator*/
+495        %MACRO FUELSSUPPcosts (first, last);
+496        data work.fuelssuppcosts (keep=NAICS costs:);
+497        	merge work.costoffuels work.costofsupplies;
+498        	%do i = &first %to &last;
+499            costs&i= CostOfFuels&i + CostOfSupplies&i;
+500        	%end;
+501        run;
+502        %MEND FUELSSUPPcosts;
+503        %FUELSSUPPcosts(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable _NAME_ by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: The data set WORK.FUELSSUPPCOSTS has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+504        
+505        %MACRO FUELSquan (first, last);
+506        data work.fuelsquan (keep=NAICS fuelsquan:);
+507        	merge work.costoffuels work.priceoffuels;
+508        	%do i = &first %to &last;
+509            fuelsquan&i= (CostOfFuels&i / PriceOfFuels&i) * 100;
+510        	%end;
+26                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+511        run;
+512        %MEND FUELSquan;
+513        %FUELSquan(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELS.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFFUELS.
+NOTE: The data set WORK.FUELSQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+514        
+515        %MACRO SUPPLIESquan (first, last);
+516        data work.suppliesquan (keep=NAICS suppliesquan:);
+517        	merge work.costofsupplies work.priceofsupplies;
+518        	%do i = &first %to &last;
+519            suppliesquan&i= (CostOfSupplies&i / PriceOfSupplies&i) * 100;
+520        	%end;
+521        run;
+522        %MEND SUPPLIESquan;
+523        %SUPPLIESquan(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIES.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFSUPPLIES.
+NOTE: The data set WORK.SUPPLIESQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+524        
+525        %MACRO FUELSSUPPquans (first, last);
+526        data work.fuelssuppquans (keep=NAICS quans:);
+527        	merge work.fuelsquan work.suppliesquan;
+528        	%do i = &first %to &last;
+529            quans&i= fuelsquan&i + suppliesquan&i;
+530        	%end;
+531        run;
+27                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+532        %MEND FUELSSUPPquans;
+533        %FUELSSUPPquans(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.FUELSQUAN.
+NOTE: There were 86 observations read from the data set WORK.SUPPLIESQUAN.
+NOTE: The data set WORK.FUELSSUPPQUANS has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+534        
+535        %MACRO KMSDFI (first, last);
+536        data IP.kmsdfi (keep=NAICS y:);
+537        	merge work.fuelssuppcosts work.fuelssuppquans;
+538        	%do i = &first %to &last;
+539            y&i= (costs&i / quans&i ) * 100;
+540        	%end;
+541        run;
+542        %MEND KMSDFI;
+543        %KMSDFI(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.FUELSSUPPCOSTS.
+NOTE: There were 86 observations read from the data set WORK.FUELSSUPPQUANS.
+NOTE: The data set IP.KMSDFI has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+544        /*End of Materials and Fuels Deflator*/
+545        
+546        
+547        /*INDEXING**********************************************************************************/
+548        
+549        /*Index of Fuels*/
+550        data IP.fuels;
+551        	set work.costoffuelsquan;
+552        run;
+
+28                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFFUELSQUAN.
+NOTE: The data set IP.FUELS has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+553        
+554        /*Index of Supplies*/
+555        data IP.materials;
+556        	set work.costofsuppliesquan;
+557        run;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSUPPLIESQUAN.
+NOTE: The data set IP.MATERIALS has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+558        
+559        /*Index of Electricity*/
+560        data IP.elect;
+561        	set work.costofelectricityquan;
+562        run;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITYQUAN.
+NOTE: The data set IP.ELECT has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+563        
+564        /*Index of Services*/
+565        data IP.services;
+566        	set work.costofservicesquan;
+567        run;
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICESQUAN.
+29                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The data set IP.SERVICES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+568        
+569        /*Index of Energy*/
+570        %MACRO FENERGYSHARES;
+571        data work.fenergyshares(Keep=NAICS fenergy:);
+572        	set work.costmerge;
+573        	%do i = &first %to &last;
+574        	fenergy&i=costoffuels&i/(costoffuels&i+costofelectricity&i);
+575        	%end;
+576        run;
+577        %MEND FENERGYSHARES;
+578        %FENERGYSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.FENERGYSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+579        
+580        %MACRO EENERGYSHARES;
+581        data work.eenergyshares(Keep=NAICS eenergy:);
+582        	set work.costmerge;
+583        	%do i = &first %to &last;
+584        	eenergy&i=costofelectricity&i/(costoffuels&i+costofelectricity&i);
+585        	%end;
+586        run;
+587        %MEND EENERGYSHARES;
+588        %EENERGYSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.EENERGYSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+30                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+589        
+590        %MACRO fenergyavgvalshares (first, second, secondtolast, last);
+591        data work.fenergyavgvalshares;
+592        	set work.fenergyshares;	
+593        	%do year2 = &second %to &last;
+594        		%do year = &first %to &secondtolast;
+595        		if &year2 = &year + 1 then
+596        		fenergyavgvalshare&year2 = (fenergy&year + fenergy&year2)/ 2;
+597        		keep NAICS fenergyavgvalshare&year2;
+598        		%end;
+599        	%end;
+600        run;
+601        %MEND fenergyavgvalshares;
+602        %fenergyavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.FENERGYSHARES.
+NOTE: The data set WORK.FENERGYAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+603        
+604        %MACRO eenergyavgvalshares (first, second, secondtolast, last);
+605        data work.eenergyavgvalshares;
+606        	set work.eenergyshares;	
+607        	%do year2 = &second %to &last;
+608        		%do year = &first %to &secondtolast;
+609        		if &year2 = &year + 1 then
+610        		eenergyavgvalshare&year2 = (eenergy&year + eenergy&year2)/ 2;
+611        		keep NAICS eenergyavgvalshare&year2;
+612        		%end;
+613        	%end;
+614        run;
+615        %MEND eenergyavgvalshares;
+616        %eenergyavgvalshares(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+31                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.EENERGYSHARES.
+NOTE: The data set WORK.EENERGYAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+617        
+618        %MACRO weightedenergy (first, last);
+619        data work.weightedenergy (keep=NAICS y:);
+620        	merge work.fuelslndiff work.electricitylndiff
+621        		  work.fenergyavgvalshares work.eenergyavgvalshares;
+622        	by NAICS;
+623        	%do i = &first %to &last;
+624            y&i= exp( (fuelslndiff&i * fenergyavgvalshare&i)+ (eleclndiff&i * eenergyavgvalshare&i) );
+625        	%end;
+626        	y&first=100;
+627        run;
+628        %MEND weightedenergy;
+629        %weightedenergy(first=&first, last=&last);
+
+NOTE: Variable fenergyavgvalshare1987 is uninitialized.
+NOTE: Variable fuelslndiff1987 is uninitialized.
+NOTE: Variable eenergyavgvalshare1987 is uninitialized.
+NOTE: Variable eleclndiff1987 is uninitialized.
+NOTE: Missing values were generated as a result of performing an operation on missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      86 at 629:11   86 at 629:31   86 at 629:54   86 at 629:70   
+NOTE: There were 86 observations read from the data set WORK.FUELSLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.ELECTRICITYLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.FENERGYAVGVALSHARES.
+NOTE: There were 86 observations read from the data set WORK.EENERGYAVGVALSHARES.
+NOTE: The data set WORK.WEIGHTEDENERGY has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+630        
+631        %MACRO ENERGY (first, second, secondtolast, last);
+32                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+632        data IP.ENERGY (keep= NAICS y:);
+633        	set work.weightedenergy;
+634        	%do year2 = &second %to &last;
+635        			%do year = &first %to &secondtolast;
+636        				if &year2 = &year + 1 then
+637        				y&year2 = y&year2 * y&year;
+638        			%end;
+639        	%end;
+640        run;
+641        %MEND ENERGY;
+642        %ENERGY(first=&first, second=&second, secondtolast=&secondtolast,last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.WEIGHTEDENERGY.
+NOTE: The data set IP.ENERGY has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+643        /*End Index of Energy*/
+644        
+645        /*Index of Materials and Services*/
+646        %MACRO MMatSrvSHARES;
+647        data work.mmatsrvshares(Keep=NAICS mmatsrv:);
+648        	set work.costmerge;
+649        	%do i = &first %to &last;
+650        	mmatsrv&i=costofsupplies&i/(costofsupplies&i+costofservices&i);
+651        	%end;
+652        run;
+653        %MEND MMatSrvSHARES;
+654        %MMatSrvSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.MMATSRVSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+655        
+33                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+656        %MACRO SMatSrvSHARES;
+657        data work.smatsrvshares(Keep=NAICS smatsrv:);
+658        	set work.costmerge;
+659        	%do i = &first %to &last;
+660        	smatsrv&i=costofservices&i/(costofsupplies&i+costofservices&i);
+661        	%end;
+662        run;
+663        %MEND SMatSrvSHARES;
+664        %SMatSrvSHARES;
+
+NOTE: There were 86 observations read from the data set WORK.COSTMERGE.
+NOTE: The data set WORK.SMATSRVSHARES has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+665        
+666        %MACRO MMatSrvAVGVALSHARES (first, second, secondtolast, last);
+667        data work.mmatsrvavgvalshares;
+668        	set work.mmatsrvshares;	
+669        	%do year2 = &second %to &last;
+670        		%do year = &first %to &secondtolast;
+671        		if &year2 = &year + 1 then
+672        		mmatsrvavgvalshare&year2 = (mmatsrv&year + mmatsrv&year2)/ 2;
+673        		keep NAICS mmatsrvavgvalshare&year2;
+674        		%end;
+675        	%end;
+676        run;
+677        %MEND MMatSrvAVGVALSHARES;
+678        %MMatSrvAVGVALSHARES(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.MMATSRVSHARES.
+NOTE: The data set WORK.MMATSRVAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.09 seconds
+      
+
+679        
+34                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+680        %MACRO SMatSrvAVGVALSHARES (first, second, secondtolast, last);
+681        data work.smatsrvavgvalshares;
+682        	set work.smatsrvshares;	
+683        	%do year2 = &second %to &last;
+684        		%do year = &first %to &secondtolast;
+685        		if &year2 = &year + 1 then
+686        		smatsrvavgvalshare&year2 = (smatsrv&year + smatsrv&year2)/ 2;
+687        		keep NAICS smatsrvavgvalshare&year2;
+688        		%end;
+689        	%end;
+690        run;
+691        %MEND SMatSrvAVGVALSHARES;
+692        %SMatSrvAVGVALSHARES(first=&first, second=&second, secondtolast=&secondtolast, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.SMATSRVSHARES.
+NOTE: The data set WORK.SMATSRVAVGVALSHARES has 86 observations and 29 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+693        
+694        %MACRO weightedmatsrv(first, last);
+695        data work.weightedmatsrv(keep=NAICS y:);
+696        	merge work.supplieslndiff work.serviceslndiff
+697        		  work.mmatsrvavgvalshares work.smatsrvavgvalshares;
+698        	by NAICS;
+699        	%do i = &first %to &last;
+700            y&i= exp( (supplndiff&i * mmatsrvavgvalshare&i)+ (servlndiff&i * smatsrvavgvalshare&i) );
+701        	%end;
+702        	y&first=100;
+703        run;
+704        %MEND weightedmatsrv;
+705        %weightedmatsrv(first=&first, last=&last);
+
+NOTE: Variable mmatsrvavgvalshare1987 is uninitialized.
+NOTE: Variable supplndiff1987 is uninitialized.
+NOTE: Variable smatsrvavgvalshare1987 is uninitialized.
+NOTE: Variable servlndiff1987 is uninitialized.
+WARNING: Multiple lengths were specified for the BY variable NAICS by input data sets. This might cause unexpected results.
+35                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: Missing values were generated as a result of performing an operation on missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      86 at 705:11   86 at 705:30   86 at 705:53   86 at 705:69   
+NOTE: There were 86 observations read from the data set WORK.SUPPLIESLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.SERVICESLNDIFF.
+NOTE: There were 86 observations read from the data set WORK.MMATSRVAVGVALSHARES.
+NOTE: There were 86 observations read from the data set WORK.SMATSRVAVGVALSHARES.
+NOTE: The data set WORK.WEIGHTEDMATSRV has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+706        
+707        %MACRO MATSRV (first, second, secondtolast, last);
+708        data IP.MATSRV (keep= NAICS y:);
+709        	set work.weightedmatsrv;
+710        	%do year2 = &second %to &last;
+711        			%do year = &first %to &secondtolast;
+712        				if &year2 = &year + 1 then
+713        				y&year2 = y&year2 * y&year;
+714        			%end;
+715        	%end;
+716        run;
+717        %MEND MATSRV;
+718        %MATSRV(first=&first, second=&second, secondtolast=&secondtolast,last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.WEIGHTEDMATSRV.
+NOTE: The data set IP.MATSRV has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+719        /*End Index of Materials and Services*/
+720        
+721        /*AGGREGATION OF IP******************************************************************************/
+722        %MACRO ELECquan (first, last);
+723        data work.elecquan (keep=NAICS elecquan:);
+724        	merge work.costofelectricity work.priceofelectricity;
+36                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+725        	%do i = &first %to &last;
+726            elecquan&i= (CostOfElectricity&i / PriceOfElectricity&i) * 100;
+727        	%end;
+728        run;
+729        %MEND ELECquan;
+730        %ELECquan(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.COSTOFELECTRICITY.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFELECTRICITY.
+NOTE: The data set WORK.ELECQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+731        
+732        %MACRO SERVquan (first, last);
+733        data work.servquan (keep=NAICS servquan:);
+734        	merge work.costofservices work.priceofservices;
+735        	%do i = &first %to &last;
+736            servquan&i= (CostOfServices&i / PriceOfServices&i) * 100;
+737        	%end;
+738        run;
+739        %MEND SERVquan;
+740        %SERVquan(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable _NAME_ by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.COSTOFSERVICES.
+NOTE: There were 86 observations read from the data set WORK.PRICEOFSERVICES.
+NOTE: The data set WORK.SERVQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+741        
+742        %MACRO AGGquan (first, last);
+743        data work.AGGquan (keep=NAICS AGGquan:);
+744        	merge work.fuelsquan work.suppliesquan work.elecquan work.servquan;
+745        	%do i = &first %to &last;
+37                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+746            aggquan&i= (fuelsquan&i + suppliesquan&i + elecquan&i + servquan&i) / 1000;
+747        	%end;
+748        run;
+749        %MEND AGGquan;
+750        %AGGquan(first=&first, last=&last);
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 86 observations read from the data set WORK.FUELSQUAN.
+NOTE: There were 86 observations read from the data set WORK.SUPPLIESQUAN.
+NOTE: There were 86 observations read from the data set WORK.ELECQUAN.
+NOTE: There were 86 observations read from the data set WORK.SERVQUAN.
+NOTE: The data set WORK.AGGQUAN has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+751        
+752        %MACRO DIRAGGIP (first, last);
+753        data IP.diraggip (keep=NAICS y:);
+754        	set work.aggquan;
+755        	%do i = &first %to &last;
+756            y&i= (aggquan&i / aggquan&first) * 100;
+757        	%end;
+758        run;
+759        %MEND DIRAGGIP;
+760        %DIRAGGIP(first=&first, last=&last);
+
+NOTE: There were 86 observations read from the data set WORK.AGGQUAN.
+NOTE: The data set IP.DIRAGGIP has 86 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+761        /*End Direct Aggregation of IP*/
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           3.05 seconds
+38                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            2.21 seconds
+      

@@ -1,0 +1,354 @@
+1                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.49 seconds
+      cpu time            0.40 seconds
+      
+1          /* All Domestic Deflators to IO Level - for Price of Services & Price of Materials
+2             Created by: Jennifer Kim
+3             Last modified: May 16, 2016 */		
+4          
+5          /* This program aggregates All Domestic Deflators to the IO Level for Price of Services and Price of Materials.
+6             The verified historical file 1987-2012 is locked down. For 2012-&lastyr, we will TQ aggregate, chain-link, then
+7             attach to the historical file. Finally, we will rebase to 1987=100. */
+8          
+9          libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+10         
+11         /*Creates macro variable from textfile*/
+12         data _null_;
+13               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+14               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+15               input updateid firstyr lastyr baseperiod;
+2                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+16               call symput('lastyr', trim(left(put(lastyr, 4.))));
+17         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+18         
+19         /* Read in Excel input files from R: drive */
+20         proc import out=work.IO_Deflators_hist
+21         			datafile="R:\MFP Datasets\Manufacturing\IP\Inputs\All Deflators IO Level (1987-2012).xlsx"
+22         			dbms=excel replace;
+23         			sheet=IO_Deflators_hist;
+24         run;
+
+NOTE: WORK.IO_DEFLATORS_HIST data set was successfully created.
+NOTE: The data set WORK.IO_DEFLATORS_HIST has 342 observations and 27 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.50 seconds
+      cpu time            0.28 seconds
+      
+
+25         
+26         proc import out=work.Deflators
+27         			datafile="R:\MFP Datasets\Manufacturing\IP\Inputs\All Deflator Commodities.xlsx"
+28         			dbms=excel replace;
+29         			sheet=Deflators;
+30         run;
+
+NOTE: WORK.DEFLATORS data set was successfully created.
+3                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The data set WORK.DEFLATORS has 547 observations and 19 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.49 seconds
+      cpu time            0.34 seconds
+      
+
+31         
+32         proc import out=work.Revenues
+33         			datafile="R:\MFP Datasets\Manufacturing\IP\Inputs\All Revenue Commodities.xlsx"
+34         			dbms=excel replace;
+35         			sheet=Revenues;
+36         run;
+
+NOTE: WORK.REVENUES data set was successfully created.
+NOTE: The data set WORK.REVENUES has 548 observations and 12 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.45 seconds
+      cpu time            0.29 seconds
+      
+
+37         
+38         /* Flatten 2012-&lastyr file */
+39         %macro flatten;
+40         Proc sql;
+41               Create table deflators2 as
+42               %do year = 2012 %to %eval(&lastyr.-1);
+43               Select IO, NAICS, &year as Year, y&year as Value from work.deflators union all
+44               %end;
+45               Select IO, NAICS, &year as Year, y&year as Value from work.deflators;
+46         
+47         	  Create table revenues2 as
+48               %do year = 2012 %to %eval(&lastyr.-1);
+49               Select IO, NAICS, &year as Year, y&year as Value from work.revenues union all
+50               %end;
+51               Select IO, NAICS, &year as Year, y&year as Value from work.revenues;
+52         quit;
+53         %mend flatten;
+54         %flatten;
+NOTE: Table WORK.DEFLATORS2 created, with 2188 rows and 4 columns.
+
+4                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.REVENUES2 created, with 2192 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+55         
+56         /* Flatten 1987-2012 historical file */
+57         %macro flatten2;
+58         Proc sql;
+59               Create table IO_deflators_hist2 as
+60               %do year = 1987 %to (2012-1);
+61               Select IO, &year as Year, y&year as Value from work.IO_deflators_hist union all
+62               %end;
+63               Select IO, &year as Year, y&year as Value from work.IO_deflators_hist;
+64         quit;
+65         %mend flatten2;
+66         %flatten2;
+NOTE: Table WORK.IO_DEFLATORS_HIST2 created, with 8892 rows and 3 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+67         
+68         /* All Deflator Commodities: Take difference in logs. */
+69         proc sql;
+70         	create table	work.deflogdif as
+71         	select			a.IO, a.NAICS, a.Year, log(a.Value/b.Value) as deflogdif
+72         	from			work.deflators2 a
+73         	left join 		work.deflators2 b
+74         	on				a.NAICS=b.NAICS and a.IO=b.IO and a.Year-1=b.Year;
+NOTE: Invalid (or missing) arguments to the LOG function have caused the function to return a missing value.
+NOTE: Table WORK.DEFLOGDIF created, with 2188 rows and 4 columns.
+
+75         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+5                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+76         
+77         /* All Revenue Commodities: Find average shares for NAICS revenues within each IO Code */
+78         proc sql;
+79         	create table	work.revenues3 as
+80         	select			IO, NAICS, Year, sum(Value) as TotRev, (Value/calculated TotRev) as Rev_share
+81         	from			work.revenues2
+82         	group by		IO, Year;
+NOTE: The query requires remerging summary statistics back with the original data.
+NOTE: Table WORK.REVENUES3 created, with 2192 rows and 5 columns.
+
+83         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+84         
+85         proc sql;
+86         	create table	work.revenues4 as
+87         	select			a.IO, a.NAICS, a.Year, (a.Rev_share + b.Rev_share)/2 as avg_share
+88         	from			work.revenues3 a
+89         	left join		work.revenues3 b
+90         	on				a.NAICS=b.NAICS and a.IO=b.IO and a.Year-1=b.Year;
+NOTE: Table WORK.REVENUES4 created, with 2192 rows and 4 columns.
+
+91         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+92         
+93         /* Multiply avg revenue share by deflatorlogdif, sum by IO code, then exponentiate */
+94         proc sql;
+95         	create table	work.IO_deflators as
+96         	select			a.IO, a.NAICS, a.Year, (a.avg_share*b.deflogdif) as value
+97         	from			work.revenues4 a, work.deflogdif b
+6                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+98         	where			a.NAICS=b.NAICS and a.IO=b.IO and a.Year=b.Year;
+NOTE: Table WORK.IO_DEFLATORS created, with 2188 rows and 4 columns.
+
+99         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+100        
+101        proc sql;
+102        	create table	work.IO_deflators2 as
+103        	select			IO, Year, sum(value) as IO_value, exp(calculated IO_value) as value
+104        	from			work.IO_deflators
+105        	group by		IO, Year;
+NOTE: Invalid (or missing) arguments to the EXP function have caused the function to return a missing value.
+NOTE: Table WORK.IO_DEFLATORS2 created, with 1384 rows and 4 columns.
+
+106        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+107        
+108        /* Chain-linking 2012-&lastyr IO deflators */
+109        %macro chain;
+110        Proc sql;
+111        Create table 	work.IO_deflators3 as
+112        Select 			a.IO, a.Year,
+113        				case when a.year=2012 then 100
+114        				%do i = 2013 %to &lastyr.;
+115        					when a.Year=&i then
+116        					%do b = &i %to 2013 %by -1;
+117        						_&b..Value*
+118        					%end;
+119        					100
+120        				%end;
+121        				end as Value
+122        from 			work.IO_deflators2 a
+7                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+123        				%do c = 2013 %to &lastyr.;
+124        					left join work.IO_deflators2 _&c on (a.IO=_&c..IO) and _&c..year=&c
+125        				%end;
+126        order by 		IO, Year;
+127        quit;
+128        %mend chain;
+129        %chain;
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.IO_DEFLATORS3 created, with 1384 rows and 3 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+130        
+131        /* Rebase historical 1987-2012 file to 2012=100 */
+132        proc sql;
+133        	create table	work.IO_deflators_hist3 as
+134        	select			a.IO, a.Year, (a.value/b.value)*100 as value
+135        	from			work.IO_deflators_hist2 a
+136        	inner join		work.IO_deflators_hist2 b
+137        	on				a.IO=b.IO and b.Year=2012;
+NOTE: Table WORK.IO_DEFLATORS_HIST3 created, with 8892 rows and 3 columns.
+
+138        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+139        
+140        /* Link historical 1987-2012 IO file to new 2012-&lastyr IO file. */
+141        proc sql;
+142        	create table	work.IO_deflators4 as
+143        	select			* from IO_deflators_hist3 a
+144        	union			
+145        	select			* from IO_deflators3 b;
+NOTE: Table WORK.IO_DEFLATORS4 created, with 9934 rows and 3 columns.
+8                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+
+146        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+147        
+148        /* Rebase to 1987=100 */
+149        proc sql;
+150        	create table	work.IO_deflators_all as
+151        	select			a.IO, a.Year, (a.value/b.value)*100 as Value
+152        	from			work.IO_deflators4 a
+153        	inner join		work.IO_deflators4 b
+154        	on				a.IO=b.IO and b.Year=1987;
+NOTE: Table WORK.IO_DEFLATORS_ALL created, with 9918 rows and 3 columns.
+
+155        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+156        
+157        /* Export to IP SAS library */
+158        data IP.IO_deflators_all;
+159        	set work.IO_deflators_all;
+160        run;
+
+NOTE: There were 9918 observations read from the data set WORK.IO_DEFLATORS_ALL.
+NOTE: The data set IP.IO_DEFLATORS_ALL has 9918 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+161        
+162        /* Export to Excel for analysis & verification */
+163        proc export data=work.IO_deflators_all
+164        			outfile="Q:\MFP\Manufacturing\IP\IP Output\IO_deflators_all.xlsx"
+9                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+165        			dbms=xlsx replace;
+166        			sheet="IO_deflators_all";
+167        run;
+
+NOTE: The export data set has 9918 observations and 3 variables.
+NOTE: "Q:\MFP\Manufacturing\IP\IP Output\IO_deflators_all.xlsx" file was successfully created.
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.24 seconds
+      cpu time            0.12 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           2.50 seconds
+      cpu time            1.66 seconds
+      

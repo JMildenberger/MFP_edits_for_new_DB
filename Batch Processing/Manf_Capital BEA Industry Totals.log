@@ -1,0 +1,600 @@
+1                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.53 seconds
+      cpu time            0.38 seconds
+      
+1          /*Allows SEG to replace variable names with spaces from Excel files with an underscore*/
+2          options validvarname=v7;
+3          options nosyntaxcheck;
+4          
+5          libname capital 'Q:\MFP\SAS Libraries\Manufacturing\Capital\capital';
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+6          libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
+NOTE: Libref COMP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\comp
+7          libname deflator 'Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator';
+NOTE: Libref DEFLATOR was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator
+8          libname sptools 'Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools';
+NOTE: Libref SPTOOLS was successfully assigned as follows: 
+2                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools
+9          libname lives 'Q:\MFP\SAS Libraries\Manufacturing\Capital\lives';
+NOTE: Libref LIVES was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\lives
+10         libname ras 'Q:\MFP\SAS Libraries\Manufacturing\Capital\ras';
+NOTE: Libref RAS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\ras
+11         libname beadfnew 'Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew';
+NOTE: Libref BEADFNEW was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew
+12         libname invest 'Q:\MFP\SAS Libraries\Manufacturing\Capital\invest';
+NOTE: Libref INVEST was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\invest
+13         libname rental 'Q:\MFP\SAS Libraries\Manufacturing\Capital\rental';
+NOTE: Libref RENTAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\rental
+14         libname kdetails 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails';
+NOTE: Libref KDETAILS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails
+15         libname kstock4d 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d';
+NOTE: Libref KSTOCK4D was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d
+16         libname stock 'Q:\MFP\SAS Libraries\Manufacturing\Capital\stock';
+NOTE: Libref STOCK was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\stock
+17         libname final 'Q:\MFP\SAS Libraries\Manufacturing\Capital\final';
+NOTE: Libref FINAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\final
+18         libname exports 'Q:\MFP\SAS Libraries\Manufacturing\Capital\exports';
+NOTE: Library EXPORTS does not exist.
+3                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+19         libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+20         
+21         
+22         /*Adding all equipment categories to get total equipment for 2002-forward*/
+23         Data work.NewCapexp_Equip_Total;
+24         set capital.newcapexp;
+25         Equipment= Total - Structures;
+26         Keep NAICS Year Equipment Structures;
+27         run;
+
+NOTE: There were 1204 observations read from the data set CAPITAL.NEWCAPEXP.
+NOTE: The data set WORK.NEWCAPEXP_EQUIP_TOTAL has 1204 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+28         
+29         /*Truncating the 1958-&last data set to be from 1958-2001*/
+30         data work.naicscapexp;
+31         set capital.naicscapexp (where=(year<2002));
+32         drop total;
+33         run;
+
+NOTE: There were 3784 observations read from the data set CAPITAL.NAICSCAPEXP.
+      WHERE year<2002;
+NOTE: The data set WORK.NAICSCAPEXP has 3784 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+34         
+35         /*Creating and 1958-&last data set with total equipment and structure investment*/
+36         data work.naicscap_all_years;
+37         set work.naicscapexp
+38             work.NewCapexp_Equip_Total;
+4                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+39         run;
+
+NOTE: There were 3784 observations read from the data set WORK.NAICSCAPEXP.
+NOTE: There were 1204 observations read from the data set WORK.NEWCAPEXP_EQUIP_TOTAL.
+NOTE: The data set WORK.NAICSCAP_ALL_YEARS has 4988 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+40         
+41         proc sort data=work.naicscap_all_years;
+42         by year naics;
+43         run;
+
+NOTE: There were 4988 observations read from the data set WORK.NAICSCAP_ALL_YEARS.
+NOTE: The data set WORK.NAICSCAP_ALL_YEARS has 4988 observations and 4 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+44         
+45         /*Putting equipment investment on a CFT and ACES industry basis*/
+46         
+47         proc transpose data=work.naicscap_all_years out=work.equipment;
+48         by year;
+49         id naics;
+50         var equipment;
+51         run;
+
+NOTE: There were 4988 observations read from the data set WORK.NAICSCAP_ALL_YEARS.
+NOTE: The data set WORK.EQUIPMENT has 58 observations and 88 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+52         
+53         data work.CFT_equipment;
+5                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+54         set work.equipment;
+55         xime15= _3111 + _3112 + _3113 + _3114 + _3115 + _3116 + _3117 + _3118 + _3119;
+56         xime16 = _3121;
+57         xime17 = _3122;
+58         xime18 = _3131 + _3132 + _3133;
+59         xime19 = _3141 + _3149;
+60         xime20 = _3151 + _3152 + _3159;
+61         xime21 = _3161 + _3162 + _3169;
+62         xime22 = _3211 + _3212 + _3219;
+63         xime23 = _3221;
+64         xime24 = _3222;
+65         xime25 = _3231;
+66         xime26 = _3241;
+67         xime27 = _3251;
+68         xime28 = _3252;
+69         xime29 = _3253;
+70         xime30 = _3254;
+71         xime31 = _3255;
+72         xime32 = _3256;
+73         xime33 = _3259;
+74         xime34 = _3261 + _3262;
+75         xime35 = _3271 + _3272 + _3273 + _3274 + _3279;
+76         xime36 = _3311 + _3312;
+77         xime37 = _3313 + _3314;
+78         xime38 = _3315;
+79         xime39 = _3321;
+80         xime40 = _3322;
+81         xime41 = _3323;
+82         xime42 = _3324;
+83         xime43 = _3325 + _3326 + _3327 + _3328 + _3329;
+84         xime44 = 0; /*industry 44 is a vector of zeros for equipment - other fabricated metal
+85         product manufacturing*/
+86         xime45 = _3331;
+87         xime46 = _3332;
+88         xime47 = _3333;
+89         xime48 = _3334;
+90         xime49 = _3335;
+91         xime50 = _3336;
+92         xime51 = _3339;
+93         xime52 = _3341;
+6                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+94         xime53 = _3342 + _3343;
+95         xime54 = _3344;
+96         xime55 = _3345;
+97         xime56 = _3346;
+98         xime57 = _3351;
+99         xime58 = _3352;
+100        xime59 = _3353;
+101        xime60 = _3359;
+102        xime61 = _3361;
+103        xime62 = _3362 +  _3363;
+104        xime63 = _3364;
+105        xime64 = _3365 + _3366 + _3369;
+106        xime65 = _3371 + _3372 + _3379;
+107        xime66 = _3391;
+108        xime67 = _3399;
+109        run;
+
+NOTE: There were 58 observations read from the data set WORK.EQUIPMENT.
+NOTE: The data set WORK.CFT_EQUIPMENT has 58 observations and 141 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+110        
+111        data work.ACES_Equipment;
+112        set work.equipment;
+113        ACES_xime1 =  _3111 + _3112 + _3113 + _3114 + _3115 + _3116 + _3117 + _3118 + _3119;
+114        ACES_xime2 =  _3121;
+115        ACES_xime3 =  _3122;
+116        ACES_xime4 =  _3131 + _3132 + _3133 + _3141 + _3149;
+117        ACES_xime5 =  _3151 + _3152 + _3159;
+118        ACES_xime6 =  _3161 + _3162 + _3169;
+119        ACES_xime7 =  _3211 + _3212 + _3219;
+120        ACES_xime8 =  _3221 + _3222;
+121        ACES_xime9 =  _3231;
+122        ACES_xime10 = _3241;
+123        ACES_xime11 = _3251 + _3252;
+124        ACES_xime12 = _3253;
+125        ACES_xime13 = _3254;
+7                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+126        ACES_xime14 = _3255 + _3256 + _3259;
+127        ACES_xime15 = _3261 + _3262;
+128        ACES_xime16 = _3271 + _3272;
+129        ACES_xime17 = _3273 + _3274 + _3279;
+130        ACES_xime18 = _3311 + _3312;
+131        ACES_xime19 = _3313 + _3314;
+132        ACES_xime20 = _3315;
+133        ACES_xime21 = _3321 + _3322 + _3323 + _3324 + _3325 + _3326 + _3327 + _3328 + _3329;
+134        ACES_xime22 = _3331;
+135        ACES_xime23 = _3332 + _3335 + _3339;
+136        ACES_xime24 = _3333 + _3334;
+137        ACES_xime25 = _3336;
+138        ACES_xime26 = _3341;
+139        ACES_xime27 = _3342 + _3343;
+140        ACES_xime28 = _3344;
+141        ACES_xime29 = _3345;
+142        ACES_xime30 = _3346;
+143        ACES_xime31 = _3351 + _3352 + _3353 + _3359;
+144        ACES_xime32 = _3361 + _3362 + _3363;
+145        ACES_xime33 = _3364;
+146        ACES_xime34 = _3365 + _3366 + _3369;
+147        ACES_xime35 = _3371 + _3372 + _3379;
+148        ACES_xime36 = _3391;
+149        ACES_xime37 = _3399;
+150        run;
+
+NOTE: There were 58 observations read from the data set WORK.EQUIPMENT.
+NOTE: The data set WORK.ACES_EQUIPMENT has 58 observations and 125 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+151        
+152        /*Putting structures investment on a CFT and ACES industry basis*/
+153        
+154        proc transpose data=work.naicscap_all_years out=work.structures;
+155        by year;
+156        id naics;
+157        var structures;
+8                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+158        run;
+
+NOTE: There were 4988 observations read from the data set WORK.NAICSCAP_ALL_YEARS.
+NOTE: The data set WORK.STRUCTURES has 58 observations and 88 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+159        
+160        data work.CFT_structures;
+161        set work.structures;
+162        xims15= _3111 + _3112 + _3113 + _3114 + _3115 + _3116 + _3117 + _3118 + _3119;
+163        xims16 = _3121;
+164        xims17 = _3122;
+165        xims18 = _3131 + _3132 + _3133;
+166        xims19 = _3141 + _3149;
+167        xims20 = _3151 + _3152 + _3159;
+168        xims21 = _3161 + _3162 + _3169;
+169        xims22 = _3211 + _3212 + _3219;
+170        xims23 = _3221;
+171        xims24 = _3222;
+172        xims25 = _3231;
+173        xims26 = _3241;
+174        xims27 = _3251;
+175        xims28 = _3252;
+176        xims29 = _3253;
+177        xims30 = _3254;
+178        xims31 = _3255;
+179        xims32 = _3256;
+180        xims33 = _3259;
+181        xims34 = _3261 + _3262;
+182        xims35 = _3271 + _3272 + _3273 + _3274 + _3279;
+183        xims36 = _3311 + _3312;
+184        xims37 = _3313 + _3314;
+185        xims38 = _3315;
+186        xims39 = _3321;
+187        xims40 = _3322;
+188        xims41 = _3323;
+189        xims42 = _3324;
+9                                                        The SAS System                              13:46 Friday, June 23, 2017
+
+190        xims43 = _3325 + _3326 + _3327 + _3328 + _3329;
+191        xims44 = 0; /*industry 44 is a vector of zeros for structures - other fabricated metal
+192        product manufacturing*/
+193        xims45 = _3331;
+194        xims46 = _3332;
+195        xims47 = _3333;
+196        xims48 = _3334;
+197        xims49 = _3335;
+198        xims50 = _3336;
+199        xims51 = _3339;
+200        xims52 = _3341;
+201        xims53 = _3342 + _3343;
+202        xims54 = _3344;
+203        xims55 = _3345;
+204        xims56 = _3346;
+205        xims57 = _3351;
+206        xims58 = _3352;
+207        xims59 = _3353;
+208        xims60 = _3359;
+209        xims61 = _3361;
+210        xims62 = _3362 +  _3363;
+211        xims63 = _3364;
+212        xims64 = _3365 + _3366 + _3369;
+213        xims65 = _3371 + _3372 + _3379;
+214        xims66 = _3391;
+215        xims67 = _3399;
+216        run;
+
+NOTE: There were 58 observations read from the data set WORK.STRUCTURES.
+NOTE: The data set WORK.CFT_STRUCTURES has 58 observations and 141 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+217        
+218        data work.ACES_structures;
+219        set work.structures;
+220        ACES_xims1 =  _3111 + _3112 + _3113 + _3114 + _3115 + _3116 + _3117 + _3118 + _3119;
+221        ACES_xims2 =  _3121;
+10                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+222        ACES_xims3 =  _3122;
+223        ACES_xims4 =  _3131 + _3132 + _3133 + _3141 + _3149;
+224        ACES_xims5 =  _3151 + _3152 + _3159;
+225        ACES_xims6 =  _3161 + _3162 + _3169;
+226        ACES_xims7 =  _3211 + _3212 + _3219;
+227        ACES_xims8 =  _3221 + _3222;
+228        ACES_xims9 =  _3231;
+229        ACES_xims10 = _3241;
+230        ACES_xims11 = _3251 + _3252;
+231        ACES_xims12 = _3253;
+232        ACES_xims13 = _3254;
+233        ACES_xims14 = _3255 + _3256 + _3259;
+234        ACES_xims15 = _3261 + _3262;
+235        ACES_xims16 = _3271 + _3272;
+236        ACES_xims17 = _3273 + _3274 + _3279;
+237        ACES_xims18 = _3311 + _3312;
+238        ACES_xims19 = _3313 + _3314;
+239        ACES_xims20 = _3315;
+240        ACES_xims21 = _3321 + _3322 + _3323 + _3324 + _3325 + _3326 + _3327 + _3328 + _3329;
+241        ACES_xims22 = _3331;
+242        ACES_xims23 = _3332 + _3335 + _3339;
+243        ACES_xims24 = _3333 + _3334;
+244        ACES_xims25 = _3336;
+245        ACES_xims26 = _3341;
+246        ACES_xims27 = _3342 + _3343;
+247        ACES_xims28 = _3344;
+248        ACES_xims29 = _3345;
+249        ACES_xims30 = _3346;
+250        ACES_xims31 = _3351 + _3352 + _3353 + _3359;
+251        ACES_xims32 = _3361 + _3362 + _3363;
+252        ACES_xims33 = _3364;
+253        ACES_xims34 = _3365 + _3366 + _3369;
+254        ACES_xims35 = _3371 + _3372 + _3379;
+255        ACES_xims36 = _3391;
+256        ACES_xims37 = _3399;
+257        run;
+
+NOTE: There were 58 observations read from the data set WORK.STRUCTURES.
+NOTE: The data set WORK.ACES_STRUCTURES has 58 observations and 125 variables.
+NOTE: DATA statement used (Total process time):
+11                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+258        
+259        /*Remove Special Tools from Total Equipment Investment for CFT Indy 61 and 62
+260          Sum equipment across industries
+261          Calculate industry proportions
+262          Use proportions to break out total asset investment from BEA*/
+263        data work.cft_equipment2;
+264        merge work.cft_equipment
+265              sptools.special_tools (where=(year>1957))
+266              invest.beainv (where=(year>1957));
+267        by year;
+268        If year<1972 then nomspt=0;
+269        sptools61_sptools62= Xime61 + Xime62;
+270        Prop61 = Xime61/sptools61_sptools62;
+271        Prop62 = 1-prop61;
+272        Xime61 = Xime61 - (Nomspt * Prop61);
+273        Xime62 = Xime62 - (Nomspt * Prop62);
+274        CFT_Total_Equipment = sum (of xi:);
+275        %macro loop;
+276        	%do indy=15 %to 67;
+277        	proportion_&indy = XIME&indy / CFT_Total_Equipment;
+278        	BIME&Indy = Proportion_&Indy * Total_Equip_Nom_Asset_Invest;
+279        %end;
+280        %mend loop;
+281        %loop;
+282        run;
+
+NOTE: There were 58 observations read from the data set WORK.CFT_EQUIPMENT.
+NOTE: There were 58 observations read from the data set SPTOOLS.SPECIAL_TOOLS.
+      WHERE year>1957;
+NOTE: There were 58 observations read from the data set INVEST.BEAINV.
+      WHERE year>1957;
+NOTE: The data set WORK.CFT_EQUIPMENT2 has 58 observations and 256 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+12                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+
+283        
+284        /*Remove Special Tools from ACES industry 32
+285          Sum investment across industries
+286          Calculate industry proportions
+287          Use proportions to break out total asset investment from BEA*/
+288        Data work.Aces_Equipment2;
+289        set work.Aces_Equipment;
+290        merge work.Aces_Equipment
+291              sptools.special_tools (where=(year>1957))
+292        	  invest.beainv (where=(year>1957));
+293        by year;
+294        If year<1972 then nomspt=0;
+295        Aces_Xime32 = ACES_Xime32 - nomspt;
+296        ACES_Total_Equipment = sum (of ACES_Xi:);
+297        %macro loop;
+298        	%do indy=1 %to 37;
+299        	proportion_&indy = ACES_XIME&indy / ACES_Total_Equipment;
+300        	ACES_BIME&Indy = Proportion_&Indy * Total_Equip_Nom_Asset_Invest;
+301        %end;
+302        %mend loop;
+303        %loop;
+304        run;
+
+NOTE: There were 58 observations read from the data set WORK.ACES_EQUIPMENT.
+NOTE: There were 58 observations read from the data set WORK.ACES_EQUIPMENT.
+NOTE: There were 58 observations read from the data set SPTOOLS.SPECIAL_TOOLS.
+      WHERE year>1957;
+NOTE: There were 58 observations read from the data set INVEST.BEAINV.
+      WHERE year>1957;
+NOTE: The data set WORK.ACES_EQUIPMENT2 has 58 observations and 205 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+305        
+306        /*Sum structure investment across industries
+307          Sum investment across industries
+308          Calculate industry proportions
+13                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+309          Use proportions to break out total asset investment from BEA*/
+310        data work.cft_structures2;
+311        merge work.cft_structures
+312        	  invest.beainv (where=(year>1957));
+313        CFT_Total_Structures = sum (of xi:);
+314        %macro loop;
+315        	%do indy=15 %to 67;
+316        	proportion_&indy = XIMS&indy / CFT_Total_Structures;
+317        	BEA_Investment&Indy = Proportion_&Indy * Total_Struct_Nom_Asset_Invest;
+318        %end;
+319        %mend loop;
+320        %loop;
+321        run;
+
+NOTE: There were 58 observations read from the data set WORK.CFT_STRUCTURES.
+NOTE: There were 58 observations read from the data set INVEST.BEAINV.
+      WHERE year>1957;
+NOTE: The data set WORK.CFT_STRUCTURES2 has 58 observations and 250 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+322        data work.aces_structures2;
+323        merge work.aces_structures
+324              invest.beainv (where=(year>1957));
+325        ACES_Total_Structures = sum (of ACES_xi:);
+326        %macro loop;
+327        	%do indy=1 %to 37;
+328        	proportion_&indy = ACES_XIMS&indy / ACES_Total_Structures;
+329        	ACES_BIMS&Indy = Proportion_&Indy * Total_Struct_Nom_Asset_Invest;
+330        %end;
+331        %mend loop;
+332        %loop;
+333        run;
+
+NOTE: There were 58 observations read from the data set WORK.ACES_STRUCTURES.
+NOTE: There were 58 observations read from the data set INVEST.BEAINV.
+      WHERE year>1957;
+NOTE: The data set WORK.ACES_STRUCTURES2 has 58 observations and 202 variables.
+14                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+334        
+335        /*writing out final nominal BEA investment data to RAS library*/
+336        data ras.bime;
+337        set work.cft_equipment2;
+338        keep bime:;
+339        run;
+
+NOTE: There were 58 observations read from the data set WORK.CFT_EQUIPMENT2.
+NOTE: The data set RAS.BIME has 58 observations and 53 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+340        
+341        data ras.aces_bime;
+342        set work.aces_equipment2;
+343        keep aces_bime:;
+344        run;
+
+NOTE: There were 58 observations read from the data set WORK.ACES_EQUIPMENT2.
+NOTE: The data set RAS.ACES_BIME has 58 observations and 37 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+345        
+346        data ras.aces_bims;
+347        set work.aces_structures2;
+348        keep aces_bims:;
+349        run;
+
+NOTE: There were 58 observations read from the data set WORK.ACES_STRUCTURES2.
+NOTE: The data set RAS.ACES_BIMS has 58 observations and 37 variables.
+15                                                       The SAS System                              13:46 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           0.92 seconds
+      cpu time            0.67 seconds
+      

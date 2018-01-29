@@ -1,0 +1,1633 @@
+1                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.51 seconds
+      cpu time            0.34 seconds
+      
+1          /*Allows SEG to replace variable names with spaces from Excel files with an underscore*/
+2          options validvarname=v7;
+3          
+4          /********************************************************************************************************************
+4        ! **
+5          *   Last change: June 21, 2017 by CG to incorporate new tab names in DMSP data
+5        !  *
+6          *   Previous changes: July 18, 2016
+6        !  *
+7          *   By: Corby Garner
+7        !  *
+8          *   Changes: Changed all proc import statements to libname statements where possible
+8        !  *
+9          *            For the 2014 update, input files were centralized. This program now reads data in from the new files.
+9        !  *																						
+10         *********************************************************************************************************************
+10       ! */	
+11         
+2                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+12         
+13         /***************************************************************************************/
+14         /*STEP 1*/
+15         /***************************************************************************************/
+16         libname capital 'Q:\MFP\SAS Libraries\Manufacturing\Capital\capital';
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+17         libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
+NOTE: Libref COMP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\comp
+18         libname deflator 'Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator';
+NOTE: Libref DEFLATOR was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator
+19         libname sptools 'Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools';
+NOTE: Libref SPTOOLS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools
+20         libname lives 'Q:\MFP\SAS Libraries\Manufacturing\Capital\lives';
+NOTE: Libref LIVES was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\lives
+21         libname ras 'Q:\MFP\SAS Libraries\Manufacturing\Capital\ras';
+NOTE: Libref RAS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\ras
+22         libname beadfnew 'Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew';
+NOTE: Libref BEADFNEW was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew
+23         libname invest 'Q:\MFP\SAS Libraries\Manufacturing\Capital\invest';
+NOTE: Libref INVEST was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\invest
+24         libname rental 'Q:\MFP\SAS Libraries\Manufacturing\Capital\rental';
+NOTE: Libref RENTAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\rental
+3                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+25         libname kdetails 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails';
+NOTE: Libref KDETAILS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails
+26         libname kstock4d 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d';
+NOTE: Libref KSTOCK4D was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d
+27         libname stock 'Q:\MFP\SAS Libraries\Manufacturing\Capital\stock';
+NOTE: Libref STOCK was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\stock
+28         libname final 'Q:\MFP\SAS Libraries\Manufacturing\Capital\final';
+NOTE: Libref FINAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\final
+29         libname exports 'Q:\MFP\SAS Libraries\Manufacturing\Capital\exports';
+NOTE: Library EXPORTS does not exist.
+30         libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+31         
+32         /*Creating a macro variable for the update year*/
+33          data _null_;
+34               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+35               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+36               input updateid firstyr lastyr baseperiod;
+37               call symput('last', trim(left(put(lastyr, 4.))));
+38         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+4                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+39         %put &last;
+2015
+40         
+41         /*reading in BEA constant dollar 3-digit NAICS investment data gathered from DMSP"*/
+42         libname BEA XLSX "P:\MFP Data\Capital\&last. Manufacturing Update\Manufacturing constant dollar investments 1901 to
+42       ! &last..xlsx";
+NOTE: Libref BEA was successfully assigned as follows: 
+      Engine:        XLSX 
+      Physical Name: P:\MFP Data\Capital\2015 Manufacturing Update\Manufacturing constant dollar investments 1901 to 2015.xlsx
+43         	
+43       !  proc contents data=bea._all_ out=work.out noprint;
+44         	run;
+
+NOTE:    Variable Name Change.  Description of Assets A1 to A63, -> Description_of_Assets_A1_to_A63_
+NOTE: The data set WORK.OUT has 204 observations and 41 variables.
+NOTE: PROCEDURE CONTENTS used (Total process time):
+      real time           2.33 seconds
+      cpu time            1.84 seconds
+      
+
+45         	
+45       !  data work.out;
+46         	set work.out (where=(Name="constant"));
+47         	if memname="README" then delete;
+48         	Number_of_Observations + Type;
+49         	run;
+
+NOTE: There were 67 observations read from the data set WORK.OUT.
+      WHERE Name='constant';
+NOTE: The data set WORK.OUT has 67 observations and 42 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+5                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+50         	/*Creating a macro variable for total number of tabs in the file*/
+51         	
+51       !   data work.asset_number;
+52         	 set work.out end=last;
+53         	 if last then output;
+54         	 keep Number_of_Observations;
+55         	 run;
+
+NOTE: There were 67 observations read from the data set WORK.OUT.
+NOTE: The data set WORK.ASSET_NUMBER has 1 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+56         	
+56       !   data _null_;
+57         	 set work.asset_number;
+58         	 call symputx ("Last_Asset",Number_of_Observations);
+59         	 run;
+
+NOTE: There were 1 observations read from the data set WORK.ASSET_NUMBER.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+60         	 %put &Last_Asset;
+67
+61         	/*Creating macro variables for the names of BEA Assets in the raw data*/
+62         	
+62       !  data _null_;
+63         	set work.out nobs=x;
+64         	      call symputx ("BEA_Asset"!!left(_n_),memname);
+65         	 run;
+
+NOTE: Numeric values have been converted to character values at the places given by: (Line):(Column).
+      64:40   
+NOTE: There were 67 observations read from the data set WORK.OUT.
+NOTE: DATA statement used (Total process time):
+6                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+66         	/*Writing data to the Capital library*/
+67         	%macro importasset;
+68         		%do asset = 1 %to &last_asset;
+69         		data capital.&&BEA_Asset&asset;
+70         			set BEA.&&BEA_Asset&asset;
+71         		run;
+72         		%end;
+73         		%mend importasset;
+74         		%importasset;
+
+NOTE: The import data set has 1610 observations and 3 variables.
+NOTE: There were 1610 observations read from the data set BEA.IA10.
+NOTE: The data set CAPITAL.IA10 has 1610 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA100.
+NOTE: The data set CAPITAL.IA100 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA11.
+NOTE: The data set CAPITAL.IA11 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+7                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA12.
+NOTE: The data set CAPITAL.IA12 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA13.
+NOTE: The data set CAPITAL.IA13 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA14.
+NOTE: The data set CAPITAL.IA14 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA15.
+NOTE: The data set CAPITAL.IA15 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA16.
+NOTE: The data set CAPITAL.IA16 has 2645 observations and 3 variables.
+8                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA17.
+NOTE: The data set CAPITAL.IA17 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 230 observations and 3 variables.
+NOTE: There were 230 observations read from the data set BEA.IA18.
+NOTE: The data set CAPITAL.IA18 has 230 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA19.
+NOTE: The data set CAPITAL.IA19 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA2.
+NOTE: The data set CAPITAL.IA2 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+9                                                        The SAS System                              13:45 Friday, June 23, 2017
+
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA20.
+NOTE: The data set CAPITAL.IA20 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA21.
+NOTE: The data set CAPITAL.IA21 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA22.
+NOTE: The data set CAPITAL.IA22 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2530 observations and 3 variables.
+NOTE: There were 2530 observations read from the data set BEA.IA23.
+NOTE: The data set CAPITAL.IA23 has 2530 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 920 observations and 3 variables.
+NOTE: There were 920 observations read from the data set BEA.IA24.
+10                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The data set CAPITAL.IA24 has 920 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 690 observations and 3 variables.
+NOTE: There were 690 observations read from the data set BEA.IA25.
+NOTE: The data set CAPITAL.IA25 has 690 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA26.
+NOTE: The data set CAPITAL.IA26 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2185 observations and 3 variables.
+NOTE: There were 2185 observations read from the data set BEA.IA27.
+NOTE: The data set CAPITAL.IA27 has 2185 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2530 observations and 3 variables.
+NOTE: There were 2530 observations read from the data set BEA.IA28.
+NOTE: The data set CAPITAL.IA28 has 2530 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+11                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA29.
+NOTE: The data set CAPITAL.IA29 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA3.
+NOTE: The data set CAPITAL.IA3 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA30.
+NOTE: The data set CAPITAL.IA30 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA32.
+NOTE: The data set CAPITAL.IA32 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+12                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 2645 observations read from the data set BEA.IA33.
+NOTE: The data set CAPITAL.IA33 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA34.
+NOTE: The data set CAPITAL.IA34 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA35.
+NOTE: The data set CAPITAL.IA35 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA36.
+NOTE: The data set CAPITAL.IA36 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2185 observations and 3 variables.
+NOTE: There were 2185 observations read from the data set BEA.IA37.
+NOTE: The data set CAPITAL.IA37 has 2185 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+13                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA38.
+NOTE: The data set CAPITAL.IA38 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.09 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA39.
+NOTE: The data set CAPITAL.IA39 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 1035 observations and 3 variables.
+NOTE: There were 1035 observations read from the data set BEA.IA4.
+NOTE: The data set CAPITAL.IA4 has 1035 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA40.
+NOTE: The data set CAPITAL.IA40 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+14                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA41.
+NOTE: The data set CAPITAL.IA41 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.09 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA42.
+NOTE: The data set CAPITAL.IA42 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA43.
+NOTE: The data set CAPITAL.IA43 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA44.
+NOTE: The data set CAPITAL.IA44 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA45.
+NOTE: The data set CAPITAL.IA45 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+15                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      real time           0.09 seconds
+      cpu time            0.09 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA46.
+NOTE: The data set CAPITAL.IA46 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 575 observations and 3 variables.
+NOTE: There were 575 observations read from the data set BEA.IA47.
+NOTE: The data set CAPITAL.IA47 has 575 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 115 observations and 3 variables.
+NOTE: There were 115 observations read from the data set BEA.IA49.
+NOTE: The data set CAPITAL.IA49 has 115 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA5.
+NOTE: The data set CAPITAL.IA5 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+16                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: The import data set has 115 observations and 3 variables.
+NOTE: There were 115 observations read from the data set BEA.IA50.
+NOTE: The data set CAPITAL.IA50 has 115 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 805 observations and 3 variables.
+NOTE: There were 805 observations read from the data set BEA.IA51.
+NOTE: The data set CAPITAL.IA51 has 805 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 115 observations and 3 variables.
+NOTE: There were 115 observations read from the data set BEA.IA52.
+NOTE: The data set CAPITAL.IA52 has 115 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 690 observations and 3 variables.
+NOTE: There were 690 observations read from the data set BEA.IA53.
+NOTE: The data set CAPITAL.IA53 has 690 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 1150 observations and 3 variables.
+NOTE: There were 1150 observations read from the data set BEA.IA54.
+NOTE: The data set CAPITAL.IA54 has 1150 observations and 3 variables.
+17                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 460 observations and 3 variables.
+NOTE: There were 460 observations read from the data set BEA.IA55.
+NOTE: The data set CAPITAL.IA55 has 460 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 805 observations and 3 variables.
+NOTE: There were 805 observations read from the data set BEA.IA57.
+NOTE: The data set CAPITAL.IA57 has 805 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 345 observations and 3 variables.
+NOTE: There were 345 observations read from the data set BEA.IA58.
+NOTE: The data set CAPITAL.IA58 has 345 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 690 observations and 3 variables.
+NOTE: There were 690 observations read from the data set BEA.IA59.
+NOTE: The data set CAPITAL.IA59 has 690 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+18                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+
+NOTE: The import data set has 1380 observations and 3 variables.
+NOTE: There were 1380 observations read from the data set BEA.IA6.
+NOTE: The data set CAPITAL.IA6 has 1380 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 460 observations and 3 variables.
+NOTE: There were 460 observations read from the data set BEA.IA60.
+NOTE: The data set CAPITAL.IA60 has 460 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 460 observations and 3 variables.
+NOTE: There were 460 observations read from the data set BEA.IA61.
+NOTE: The data set CAPITAL.IA61 has 460 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 115 observations and 3 variables.
+NOTE: There were 115 observations read from the data set BEA.IA62.
+NOTE: The data set CAPITAL.IA62 has 115 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 690 observations and 3 variables.
+NOTE: There were 690 observations read from the data set BEA.IA63.
+19                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The data set CAPITAL.IA63 has 690 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 2530 observations and 3 variables.
+NOTE: There were 2530 observations read from the data set BEA.IA7.
+NOTE: The data set CAPITAL.IA7 has 2530 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 920 observations and 3 variables.
+NOTE: There were 920 observations read from the data set BEA.IA83.
+NOTE: The data set CAPITAL.IA83 has 920 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+
+NOTE: The import data set has 345 observations and 3 variables.
+NOTE: There were 345 observations read from the data set BEA.IA84.
+NOTE: The data set CAPITAL.IA84 has 345 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.01 seconds
+      
+
+
+NOTE: The import data set has 1265 observations and 3 variables.
+NOTE: There were 1265 observations read from the data set BEA.IA86.
+NOTE: The data set CAPITAL.IA86 has 1265 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.04 seconds
+20                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      
+
+
+NOTE: The import data set has 345 observations and 3 variables.
+NOTE: There were 345 observations read from the data set BEA.IA87.
+NOTE: The data set CAPITAL.IA87 has 345 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+
+NOTE: The import data set has 1035 observations and 3 variables.
+NOTE: There were 1035 observations read from the data set BEA.IA88.
+NOTE: The data set CAPITAL.IA88 has 1035 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2185 observations and 3 variables.
+NOTE: There were 2185 observations read from the data set BEA.IA89.
+NOTE: The data set CAPITAL.IA89 has 2185 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA9.
+NOTE: The data set CAPITAL.IA9 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.07 seconds
+      
+
+
+NOTE: The import data set has 2070 observations and 3 variables.
+21                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 2070 observations read from the data set BEA.IA90.
+NOTE: The data set CAPITAL.IA90 has 2070 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.06 seconds
+      
+
+
+NOTE: The import data set has 2645 observations and 3 variables.
+NOTE: There were 2645 observations read from the data set BEA.IA95.
+NOTE: The data set CAPITAL.IA95 has 2645 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.12 seconds
+      
+
+75         libname bea clear;
+NOTE: Libref BEA has been deassigned.
+76         
+77         /*Reading in the list of NAICS indudstries*/
+78         libname indys "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\INDYS.xlsx" ;
+NOTE: Libref INDYS was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\INDYS.xlsx
+79         	
+79       !  data capital.indys;
+80         	set indys.'INDYS$'n;
+81         	run;
+
+NOTE: There were 86 observations read from the data set INDYS.'INDYS$'n.
+NOTE: The data set CAPITAL.INDYS has 86 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+82         libname indys clear;
+NOTE: Libref INDYS has been deassigned.
+83         
+84         /*Reading all years data*/
+22                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+85         libname years "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Years.xlsx";
+NOTE: Libref YEARS was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Years.xlsx
+86         	/*1987-forward*/
+87         	
+87       !  data capital.naicsyears;
+88         	set years.'years$'n;
+89         	RUN;
+
+NOTE: There were 29 observations read from the data set YEARS.'years$'n.
+NOTE: The data set CAPITAL.NAICSYEARS has 29 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+90         	
+90       !  data capital.years;
+91         	set years.'years$'n;
+92         	RUN;
+
+NOTE: There were 29 observations read from the data set YEARS.'years$'n.
+NOTE: The data set CAPITAL.YEARS has 29 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+93         	/*1958-forward*/
+94         	
+94       !  data capital.allyears;
+95         	set years.'Allyears$'n;
+96         	RUN;
+
+NOTE: There were 58 observations read from the data set YEARS.'Allyears$'n.
+NOTE: The data set CAPITAL.ALLYEARS has 58 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+23                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      
+
+97         	/*1901-forward*/
+98         	
+98       !  data capital.structureyears;
+99         	set years.'structureyears$'n;
+100        	run;
+
+NOTE: There were 115 observations read from the data set YEARS.'structureyears$'n.
+NOTE: The data set CAPITAL.STRUCTUREYEARS has 115 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+101        	
+101      !  data capital.endyear ;
+102        	set years.'endyear$'n;
+103        	RUN;
+
+NOTE: There were 1 observations read from the data set YEARS.'endyear$'n.
+NOTE: The data set CAPITAL.ENDYEAR has 1 observations and 1 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+104        libname years clear;
+NOTE: Libref YEARS has been deassigned.
+105        
+106        /*importing in BEA total deflators for each year for each asset type 1947-forward*/
+107        libname btot "P:\MFP Data\Capital\&last Manufacturing Update\asset deflators 1901 to &last..xlsx";
+NOTE: Libref BTOT was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: P:\MFP Data\Capital\2015 Manufacturing Update\asset deflators 1901 to 2015.xlsx
+108        	
+108      !  data deflator.btot;
+109        	set btot.'BTOTN$'n;
+110        	run;
+
+24                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: There were 115 observations read from the data set BTOT.'BTOTN$'n.
+NOTE: The data set DEFLATOR.BTOT has 115 observations and 87 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.07 seconds
+      
+
+111        libname btot clear;
+NOTE: Libref BTOT has been deassigned.
+112        
+113        /*Importing nominal investment, deflator and real investment*/
+114        libname sptool "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Special Tools.xlsx";
+NOTE: Libref SPTOOL was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Special Tools.xlsx
+115        	
+115      !  data sptools.special_tools;
+116        	set sptool.'Final_Data$'n;
+117        	run;
+
+NOTE: There were 69 observations read from the data set SPTOOL.'Final_Data$'n.
+NOTE: The data set SPTOOLS.SPECIAL_TOOLS has 69 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+118        libname sptool clear;
+NOTE: Libref SPTOOL has been deassigned.
+119        
+120        /*importing tax special tools series starting 1987; Tax factor for special tools is the same
+121        as equipment tax factor*/
+122        libname taxes "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\taxspt.xlsx";
+NOTE: Libref TAXES was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\taxspt.xlsx
+123        	
+123      !  data sptools.taxspt;
+124        	set taxes.'taxspt$'n;
+125        	RUN;
+25                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: There were 29 observations read from the data set TAXES.'taxspt$'n.
+NOTE: The data set SPTOOLS.TAXSPT has 29 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+126        libname taxes clear;
+NOTE: Libref TAXES has been deassigned.
+127        
+128        /*CFT Commodity Flow Table PPIs*/
+129        libname ppi "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Capital Deflators.xlsx";
+NOTE: Libref PPI was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Capital Deflators.xlsx
+130        	
+130      !  data deflator.commodity_flow_PPI;
+131        	set ppi.'Commodity_PPIs$'n;
+132        	run;
+
+NOTE: There were 127 observations read from the data set PPI.'Commodity_PPIs$'n.
+NOTE: The data set DEFLATOR.COMMODITY_FLOW_PPI has 127 observations and 33 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.14 seconds
+      
+
+133        
+134        	
+134      !  data deflator.capdefasset5;
+135        	set ppi.'Asset5$'n;
+136        	run;
+
+NOTE: There were 1 observations read from the data set PPI.'Asset5$'n.
+NOTE: The data set DEFLATOR.CAPDEFASSET5 has 1 observations and 30 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+26                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+137        libname ppi clear;
+NOTE: Libref PPI has been deassigned.
+138        
+139        /*tax factors beginning year 1987*/
+140        libname taxes "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Taxfac.xlsx";
+NOTE: Libref TAXES was successfully assigned as follows: 
+      Engine:        EXCEL 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\Taxfac.xlsx
+141        	
+141      !  data capital.taxfac;
+142        	set taxes.'Sheet1$'n;
+143        	run;
+
+NOTE: There were 29 observations read from the data set TAXES.'Sheet1$'n.
+NOTE: The data set CAPITAL.TAXFAC has 29 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+
+144        libname taxes clear;
+NOTE: Libref TAXES has been deassigned.
+145        
+146        /*
+147        *******************************************************************************************************************
+148        *                                                                                                                  *
+149        *                The following data is read in but is static and not updated every year                            *
+150        *                                                                                                                  *
+151        ********************************************************************************************************************
+152        
+153        /*Capital Flow Table taken from the BEA: http://www.bea.gov/bea/dn2/home/benchmark.htm*/
+154        PROC IMPORT OUT= CAPITAL.equipment
+155                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs archive\equipmentcapitalflow.xls"
+156                    DBMS=EXCEL REPLACE;
+157        RUN;
+
+NOTE: CAPITAL.EQUIPMENT data set was successfully created.
+NOTE: The data set CAPITAL.EQUIPMENT has 27 observations and 54 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+27                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+      real time           0.75 seconds
+      cpu time            0.31 seconds
+      
+
+158        /*Capital Flow Table taken from the BEA: http://www.bea.gov/bea/dn2/home/benchmark.htm*/
+159        PROC IMPORT OUT= CAPITAL.Structures
+160                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs archive\structurescapitalflow.xls"
+161                    DBMS=EXCEL REPLACE;
+162        RUN;
+
+NOTE: CAPITAL.STRUCTURES data set was successfully created.
+NOTE: The data set CAPITAL.STRUCTURES has 2 observations and 54 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.49 seconds
+      cpu time            0.31 seconds
+      
+
+163        
+164        /*2008 ACES Detailed Equipment*/
+165        PROC IMPORT OUT= CAPITAL.ACES_2008_Equip_Original
+166                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\ACES Equipment 2008.xlsx"
+167                    DBMS=EXCEL REPLACE;
+168        			sheet="SAS_Import";
+169        RUN;
+
+NOTE: CAPITAL.ACES_2008_EQUIP_ORIGINAL data set was successfully created.
+NOTE: The data set CAPITAL.ACES_2008_EQUIP_ORIGINAL has 24 observations and 37 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.56 seconds
+      cpu time            0.35 seconds
+      
+
+170        /*2008 ACES Detailed Structures*/
+171        PROC IMPORT OUT= CAPITAL.ACES_2008_Structures
+172                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\ACES Structures 2008.xlsx"
+173                    DBMS=EXCEL REPLACE;
+174        			sheet="SAS_Import";
+175        RUN;
+
+NOTE: CAPITAL.ACES_2008_STRUCTURES data set was successfully created.
+28                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE: The data set CAPITAL.ACES_2008_STRUCTURES has 10 observations and 37 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.45 seconds
+      cpu time            0.28 seconds
+      
+
+176        /*2012 ACES Detailed Equipment*/
+177        PROC IMPORT OUT= CAPITAL.ACES_2012_Equip_Original
+178                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\ACES Equipment 2012.xlsx"
+179                    DBMS=EXCEL REPLACE;
+180        			sheet="SAS_Import";
+181        RUN;
+
+NOTE: CAPITAL.ACES_2012_EQUIP_ORIGINAL data set was successfully created.
+NOTE: The data set CAPITAL.ACES_2012_EQUIP_ORIGINAL has 24 observations and 37 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.47 seconds
+      cpu time            0.23 seconds
+      
+
+182        /*2012 ACES Detailed Structures*/
+183        PROC IMPORT OUT= CAPITAL.ACES_2012_Structures
+184                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\ACES Structures 2012.xlsx"
+185                    DBMS=EXCEL REPLACE;
+186        			sheet="SAS_Import";
+187        RUN;
+
+NOTE: CAPITAL.ACES_2012_STRUCTURES data set was successfully created.
+NOTE: The data set CAPITAL.ACES_2012_STRUCTURES has 10 observations and 37 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.78 seconds
+      cpu time            0.42 seconds
+      
+
+188        
+189        /*CFT Commodity Flow Table*/
+190        PROC IMPORT OUT= capital.commodity_flow_table
+191                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\CFT Commodity Table.xlsx"
+192                    DBMS=EXCEL REPLACE;
+193        RUN;
+29                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: CAPITAL.COMMODITY_FLOW_TABLE data set was successfully created.
+NOTE: The data set CAPITAL.COMMODITY_FLOW_TABLE has 127 observations and 55 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.48 seconds
+      cpu time            0.32 seconds
+      
+
+194        /*importing in single value for special tools for 1997 and single value of the deflator
+195        for special tools years 1997- because that is the year of the capital flow chart -
+196        will need to change the value according to what year is used on capital flow chart*/
+197        PROC IMPORT OUT= SPTOOLS.cfsptyr
+198                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs archive\cfsptyr.xls"
+199                    DBMS=EXCEL REPLACE;
+200        RUN;
+
+NOTE: SPTOOLS.CFSPTYR data set was successfully created.
+NOTE: The data set SPTOOLS.CFSPTYR has 2 observations and 1 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.45 seconds
+      cpu time            0.32 seconds
+      
+
+201        /*importing in single value for implicit price deflators for 4-digit output measures used
+202        with finished goods and work-in-process.  The value is 1997 and single value of the deflator
+203        1997- because that is the year of the capital flow chart - will need to change the value
+204        according to what year is used on capital flow chart*/
+205        PROC IMPORT OUT= deflator.pfgbase
+206                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs archive\pfgbase.xls"
+207                    DBMS=EXCEL REPLACE;
+208        RUN;
+
+NOTE: DEFLATOR.PFGBASE data set was successfully created.
+NOTE: The data set DEFLATOR.PFGBASE has 86 observations and 2 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.41 seconds
+      cpu time            0.29 seconds
+      
+
+209        
+30                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+210        /*importing in service lives of the assets*/
+211        /*Mean service life for each asset*/
+212        libname livein xlsx "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\All Service Lives.xlsx";
+NOTE: Libref LIVEIN was successfully assigned as follows: 
+      Engine:        XLSX 
+      Physical Name: R:\MFP DataSets\Manufacturing\Capital\SAS Inputs\All Service Lives.xlsx
+213        	
+213      !  data lives.lives_1_8;
+214        	set livein.assets1_8;
+215        	RUN;
+
+NOTE: The import data set has 1 observations and 9 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.assets1_8.
+NOTE: The data set LIVES.LIVES_1_8 has 1 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+216        	
+216      !  data lives.lives_12_24;
+217        	set livein.Assets12_24;
+218        	RUN;
+
+NOTE: The import data set has 1 observations and 25 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.Assets12_24.
+NOTE: The data set LIVES.LIVES_12_24 has 1 observations and 25 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+219        	
+219      !  data lives.lives_9;
+220        	set livein.Asset9;
+NOTE:    Variable Name Change.  3111 -> _3111                           
+NOTE:    Variable Name Change.  3112 -> _3112                           
+NOTE:    Variable Name Change.  3113 -> _3113                           
+NOTE:    Variable Name Change.  3114 -> _3114                           
+NOTE:    Variable Name Change.  3115 -> _3115                           
+31                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3116 -> _3116                           
+NOTE:    Variable Name Change.  3117 -> _3117                           
+NOTE:    Variable Name Change.  3118 -> _3118                           
+NOTE:    Variable Name Change.  3119 -> _3119                           
+NOTE:    Variable Name Change.  3121 -> _3121                           
+NOTE:    Variable Name Change.  3122 -> _3122                           
+NOTE:    Variable Name Change.  3131 -> _3131                           
+NOTE:    Variable Name Change.  3132 -> _3132                           
+NOTE:    Variable Name Change.  3133 -> _3133                           
+NOTE:    Variable Name Change.  3141 -> _3141                           
+NOTE:    Variable Name Change.  3149 -> _3149                           
+NOTE:    Variable Name Change.  3151 -> _3151                           
+NOTE:    Variable Name Change.  3152 -> _3152                           
+NOTE:    Variable Name Change.  3159 -> _3159                           
+NOTE:    Variable Name Change.  3161 -> _3161                           
+NOTE:    Variable Name Change.  3162 -> _3162                           
+NOTE:    Variable Name Change.  3169 -> _3169                           
+NOTE:    Variable Name Change.  3211 -> _3211                           
+NOTE:    Variable Name Change.  3212 -> _3212                           
+NOTE:    Variable Name Change.  3219 -> _3219                           
+NOTE:    Variable Name Change.  3221 -> _3221                           
+NOTE:    Variable Name Change.  3222 -> _3222                           
+NOTE:    Variable Name Change.  3231 -> _3231                           
+NOTE:    Variable Name Change.  3241 -> _3241                           
+NOTE:    Variable Name Change.  3251 -> _3251                           
+NOTE:    Variable Name Change.  3252 -> _3252                           
+NOTE:    Variable Name Change.  3253 -> _3253                           
+NOTE:    Variable Name Change.  3254 -> _3254                           
+NOTE:    Variable Name Change.  3255 -> _3255                           
+NOTE:    Variable Name Change.  3256 -> _3256                           
+NOTE:    Variable Name Change.  3259 -> _3259                           
+NOTE:    Variable Name Change.  3261 -> _3261                           
+NOTE:    Variable Name Change.  3262 -> _3262                           
+NOTE:    Variable Name Change.  3271 -> _3271                           
+NOTE:    Variable Name Change.  3272 -> _3272                           
+NOTE:    Variable Name Change.  3273 -> _3273                           
+NOTE:    Variable Name Change.  3274 -> _3274                           
+NOTE:    Variable Name Change.  3279 -> _3279                           
+NOTE:    Variable Name Change.  3311 -> _3311                           
+NOTE:    Variable Name Change.  3312 -> _3312                           
+32                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3313 -> _3313                           
+NOTE:    Variable Name Change.  3314 -> _3314                           
+NOTE:    Variable Name Change.  3315 -> _3315                           
+NOTE:    Variable Name Change.  3321 -> _3321                           
+NOTE:    Variable Name Change.  3322 -> _3322                           
+NOTE:    Variable Name Change.  3323 -> _3323                           
+NOTE:    Variable Name Change.  3324 -> _3324                           
+NOTE:    Variable Name Change.  3325 -> _3325                           
+NOTE:    Variable Name Change.  3326 -> _3326                           
+NOTE:    Variable Name Change.  3327 -> _3327                           
+NOTE:    Variable Name Change.  3328 -> _3328                           
+NOTE:    Variable Name Change.  3329 -> _3329                           
+NOTE:    Variable Name Change.  3331 -> _3331                           
+NOTE:    Variable Name Change.  3332 -> _3332                           
+NOTE:    Variable Name Change.  3333 -> _3333                           
+NOTE:    Variable Name Change.  3334 -> _3334                           
+NOTE:    Variable Name Change.  3335 -> _3335                           
+NOTE:    Variable Name Change.  3336 -> _3336                           
+NOTE:    Variable Name Change.  3339 -> _3339                           
+NOTE:    Variable Name Change.  3341 -> _3341                           
+NOTE:    Variable Name Change.  3342 -> _3342                           
+NOTE:    Variable Name Change.  3343 -> _3343                           
+NOTE:    Variable Name Change.  3344 -> _3344                           
+NOTE:    Variable Name Change.  3345 -> _3345                           
+NOTE:    Variable Name Change.  3346 -> _3346                           
+NOTE:    Variable Name Change.  3351 -> _3351                           
+NOTE:    Variable Name Change.  3352 -> _3352                           
+NOTE:    Variable Name Change.  3353 -> _3353                           
+NOTE:    Variable Name Change.  3359 -> _3359                           
+NOTE:    Variable Name Change.  3361 -> _3361                           
+NOTE:    Variable Name Change.  3362 -> _3362                           
+NOTE:    Variable Name Change.  3363 -> _3363                           
+NOTE:    Variable Name Change.  3364 -> _3364                           
+NOTE:    Variable Name Change.  3365 -> _3365                           
+NOTE:    Variable Name Change.  3366 -> _3366                           
+NOTE:    Variable Name Change.  3369 -> _3369                           
+NOTE:    Variable Name Change.  3371 -> _3371                           
+NOTE:    Variable Name Change.  3372 -> _3372                           
+NOTE:    Variable Name Change.  3379 -> _3379                           
+NOTE:    Variable Name Change.  3391 -> _3391                           
+33                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3399 -> _3399                           
+221        	RUN;
+
+NOTE: The import data set has 1 observations and 87 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.Asset9.
+NOTE: The data set LIVES.LIVES_9 has 1 observations and 87 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.01 seconds
+      
+
+222        	
+222      !  data lives.lives_10;
+223        	set livein.Asset10;
+NOTE:    Variable Name Change.  3111 -> _3111                           
+NOTE:    Variable Name Change.  3112 -> _3112                           
+NOTE:    Variable Name Change.  3113 -> _3113                           
+NOTE:    Variable Name Change.  3114 -> _3114                           
+NOTE:    Variable Name Change.  3115 -> _3115                           
+NOTE:    Variable Name Change.  3116 -> _3116                           
+NOTE:    Variable Name Change.  3117 -> _3117                           
+NOTE:    Variable Name Change.  3118 -> _3118                           
+NOTE:    Variable Name Change.  3119 -> _3119                           
+NOTE:    Variable Name Change.  3121 -> _3121                           
+NOTE:    Variable Name Change.  3122 -> _3122                           
+NOTE:    Variable Name Change.  3131 -> _3131                           
+NOTE:    Variable Name Change.  3132 -> _3132                           
+NOTE:    Variable Name Change.  3133 -> _3133                           
+NOTE:    Variable Name Change.  3141 -> _3141                           
+NOTE:    Variable Name Change.  3149 -> _3149                           
+NOTE:    Variable Name Change.  3151 -> _3151                           
+NOTE:    Variable Name Change.  3152 -> _3152                           
+NOTE:    Variable Name Change.  3159 -> _3159                           
+NOTE:    Variable Name Change.  3161 -> _3161                           
+NOTE:    Variable Name Change.  3162 -> _3162                           
+NOTE:    Variable Name Change.  3169 -> _3169                           
+NOTE:    Variable Name Change.  3211 -> _3211                           
+NOTE:    Variable Name Change.  3212 -> _3212                           
+NOTE:    Variable Name Change.  3219 -> _3219                           
+NOTE:    Variable Name Change.  3221 -> _3221                           
+34                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3222 -> _3222                           
+NOTE:    Variable Name Change.  3231 -> _3231                           
+NOTE:    Variable Name Change.  3241 -> _3241                           
+NOTE:    Variable Name Change.  3251 -> _3251                           
+NOTE:    Variable Name Change.  3252 -> _3252                           
+NOTE:    Variable Name Change.  3253 -> _3253                           
+NOTE:    Variable Name Change.  3254 -> _3254                           
+NOTE:    Variable Name Change.  3255 -> _3255                           
+NOTE:    Variable Name Change.  3256 -> _3256                           
+NOTE:    Variable Name Change.  3259 -> _3259                           
+NOTE:    Variable Name Change.  3261 -> _3261                           
+NOTE:    Variable Name Change.  3262 -> _3262                           
+NOTE:    Variable Name Change.  3271 -> _3271                           
+NOTE:    Variable Name Change.  3272 -> _3272                           
+NOTE:    Variable Name Change.  3273 -> _3273                           
+NOTE:    Variable Name Change.  3274 -> _3274                           
+NOTE:    Variable Name Change.  3279 -> _3279                           
+NOTE:    Variable Name Change.  3311 -> _3311                           
+NOTE:    Variable Name Change.  3312 -> _3312                           
+NOTE:    Variable Name Change.  3313 -> _3313                           
+NOTE:    Variable Name Change.  3314 -> _3314                           
+NOTE:    Variable Name Change.  3315 -> _3315                           
+NOTE:    Variable Name Change.  3321 -> _3321                           
+NOTE:    Variable Name Change.  3322 -> _3322                           
+NOTE:    Variable Name Change.  3323 -> _3323                           
+NOTE:    Variable Name Change.  3324 -> _3324                           
+NOTE:    Variable Name Change.  3325 -> _3325                           
+NOTE:    Variable Name Change.  3326 -> _3326                           
+NOTE:    Variable Name Change.  3327 -> _3327                           
+NOTE:    Variable Name Change.  3328 -> _3328                           
+NOTE:    Variable Name Change.  3329 -> _3329                           
+NOTE:    Variable Name Change.  3331 -> _3331                           
+NOTE:    Variable Name Change.  3332 -> _3332                           
+NOTE:    Variable Name Change.  3333 -> _3333                           
+NOTE:    Variable Name Change.  3334 -> _3334                           
+NOTE:    Variable Name Change.  3335 -> _3335                           
+NOTE:    Variable Name Change.  3336 -> _3336                           
+NOTE:    Variable Name Change.  3339 -> _3339                           
+NOTE:    Variable Name Change.  3341 -> _3341                           
+NOTE:    Variable Name Change.  3342 -> _3342                           
+35                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3343 -> _3343                           
+NOTE:    Variable Name Change.  3344 -> _3344                           
+NOTE:    Variable Name Change.  3345 -> _3345                           
+NOTE:    Variable Name Change.  3346 -> _3346                           
+NOTE:    Variable Name Change.  3351 -> _3351                           
+NOTE:    Variable Name Change.  3352 -> _3352                           
+NOTE:    Variable Name Change.  3353 -> _3353                           
+NOTE:    Variable Name Change.  3359 -> _3359                           
+NOTE:    Variable Name Change.  3361 -> _3361                           
+NOTE:    Variable Name Change.  3362 -> _3362                           
+NOTE:    Variable Name Change.  3363 -> _3363                           
+NOTE:    Variable Name Change.  3364 -> _3364                           
+NOTE:    Variable Name Change.  3365 -> _3365                           
+NOTE:    Variable Name Change.  3366 -> _3366                           
+NOTE:    Variable Name Change.  3369 -> _3369                           
+NOTE:    Variable Name Change.  3371 -> _3371                           
+NOTE:    Variable Name Change.  3372 -> _3372                           
+NOTE:    Variable Name Change.  3379 -> _3379                           
+NOTE:    Variable Name Change.  3391 -> _3391                           
+NOTE:    Variable Name Change.  3399 -> _3399                           
+224        	RUN;
+
+NOTE: The import data set has 1 observations and 87 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.Asset10.
+NOTE: The data set LIVES.LIVES_10 has 1 observations and 87 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.01 seconds
+      
+
+225        	
+225      !  data lives.lives_11;
+226        	set livein.Asset11;
+NOTE:    Variable Name Change.  3111 -> _3111                           
+NOTE:    Variable Name Change.  3112 -> _3112                           
+NOTE:    Variable Name Change.  3113 -> _3113                           
+NOTE:    Variable Name Change.  3114 -> _3114                           
+NOTE:    Variable Name Change.  3115 -> _3115                           
+NOTE:    Variable Name Change.  3116 -> _3116                           
+NOTE:    Variable Name Change.  3117 -> _3117                           
+36                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3118 -> _3118                           
+NOTE:    Variable Name Change.  3119 -> _3119                           
+NOTE:    Variable Name Change.  3121 -> _3121                           
+NOTE:    Variable Name Change.  3122 -> _3122                           
+NOTE:    Variable Name Change.  3131 -> _3131                           
+NOTE:    Variable Name Change.  3132 -> _3132                           
+NOTE:    Variable Name Change.  3133 -> _3133                           
+NOTE:    Variable Name Change.  3141 -> _3141                           
+NOTE:    Variable Name Change.  3149 -> _3149                           
+NOTE:    Variable Name Change.  3151 -> _3151                           
+NOTE:    Variable Name Change.  3152 -> _3152                           
+NOTE:    Variable Name Change.  3159 -> _3159                           
+NOTE:    Variable Name Change.  3161 -> _3161                           
+NOTE:    Variable Name Change.  3162 -> _3162                           
+NOTE:    Variable Name Change.  3169 -> _3169                           
+NOTE:    Variable Name Change.  3211 -> _3211                           
+NOTE:    Variable Name Change.  3212 -> _3212                           
+NOTE:    Variable Name Change.  3219 -> _3219                           
+NOTE:    Variable Name Change.  3221 -> _3221                           
+NOTE:    Variable Name Change.  3222 -> _3222                           
+NOTE:    Variable Name Change.  3231 -> _3231                           
+NOTE:    Variable Name Change.  3241 -> _3241                           
+NOTE:    Variable Name Change.  3251 -> _3251                           
+NOTE:    Variable Name Change.  3252 -> _3252                           
+NOTE:    Variable Name Change.  3253 -> _3253                           
+NOTE:    Variable Name Change.  3254 -> _3254                           
+NOTE:    Variable Name Change.  3255 -> _3255                           
+NOTE:    Variable Name Change.  3256 -> _3256                           
+NOTE:    Variable Name Change.  3259 -> _3259                           
+NOTE:    Variable Name Change.  3261 -> _3261                           
+NOTE:    Variable Name Change.  3262 -> _3262                           
+NOTE:    Variable Name Change.  3271 -> _3271                           
+NOTE:    Variable Name Change.  3272 -> _3272                           
+NOTE:    Variable Name Change.  3273 -> _3273                           
+NOTE:    Variable Name Change.  3274 -> _3274                           
+NOTE:    Variable Name Change.  3279 -> _3279                           
+NOTE:    Variable Name Change.  3311 -> _3311                           
+NOTE:    Variable Name Change.  3312 -> _3312                           
+NOTE:    Variable Name Change.  3313 -> _3313                           
+NOTE:    Variable Name Change.  3314 -> _3314                           
+37                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+NOTE:    Variable Name Change.  3315 -> _3315                           
+NOTE:    Variable Name Change.  3321 -> _3321                           
+NOTE:    Variable Name Change.  3322 -> _3322                           
+NOTE:    Variable Name Change.  3323 -> _3323                           
+NOTE:    Variable Name Change.  3324 -> _3324                           
+NOTE:    Variable Name Change.  3325 -> _3325                           
+NOTE:    Variable Name Change.  3326 -> _3326                           
+NOTE:    Variable Name Change.  3327 -> _3327                           
+NOTE:    Variable Name Change.  3328 -> _3328                           
+NOTE:    Variable Name Change.  3329 -> _3329                           
+NOTE:    Variable Name Change.  3331 -> _3331                           
+NOTE:    Variable Name Change.  3332 -> _3332                           
+NOTE:    Variable Name Change.  3333 -> _3333                           
+NOTE:    Variable Name Change.  3334 -> _3334                           
+NOTE:    Variable Name Change.  3335 -> _3335                           
+NOTE:    Variable Name Change.  3336 -> _3336                           
+NOTE:    Variable Name Change.  3339 -> _3339                           
+NOTE:    Variable Name Change.  3341 -> _3341                           
+NOTE:    Variable Name Change.  3342 -> _3342                           
+NOTE:    Variable Name Change.  3343 -> _3343                           
+NOTE:    Variable Name Change.  3344 -> _3344                           
+NOTE:    Variable Name Change.  3345 -> _3345                           
+NOTE:    Variable Name Change.  3346 -> _3346                           
+NOTE:    Variable Name Change.  3351 -> _3351                           
+NOTE:    Variable Name Change.  3352 -> _3352                           
+NOTE:    Variable Name Change.  3353 -> _3353                           
+NOTE:    Variable Name Change.  3359 -> _3359                           
+NOTE:    Variable Name Change.  3361 -> _3361                           
+NOTE:    Variable Name Change.  3362 -> _3362                           
+NOTE:    Variable Name Change.  3363 -> _3363                           
+NOTE:    Variable Name Change.  3364 -> _3364                           
+NOTE:    Variable Name Change.  3365 -> _3365                           
+NOTE:    Variable Name Change.  3366 -> _3366                           
+NOTE:    Variable Name Change.  3369 -> _3369                           
+NOTE:    Variable Name Change.  3371 -> _3371                           
+NOTE:    Variable Name Change.  3372 -> _3372                           
+NOTE:    Variable Name Change.  3379 -> _3379                           
+NOTE:    Variable Name Change.  3391 -> _3391                           
+NOTE:    Variable Name Change.  3399 -> _3399                           
+227        	RUN;
+38                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+
+NOTE: The import data set has 1 observations and 87 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.Asset11.
+NOTE: The data set LIVES.LIVES_11 has 1 observations and 87 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+
+228        	
+228      !  data lives.structures;
+229        	set livein.Structures;
+230        	RUN;
+
+NOTE: The import data set has 1 observations and 11 variables.
+NOTE: There were 1 observations read from the data set LIVEIN.Structures.
+NOTE: The data set LIVES.STRUCTURES has 1 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.00 seconds
+      
+
+231        libname livein clear;
+NOTE: Libref LIVEIN has been deassigned.
+232        
+233        /*importing pre-1948 structures BEA deflators*/
+234        PROC IMPORT OUT= deflator.strpre1948deflator
+235                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs archive\Strdfp48.xls"
+236                    DBMS=EXCEL REPLACE;
+237        RUN;
+
+NOTE: DEFLATOR.STRPRE1948DEFLATOR data set was successfully created.
+NOTE: The data set DEFLATOR.STRPRE1948DEFLATOR has 97 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.44 seconds
+      cpu time            0.28 seconds
+      
+
+238        
+239        /*importing historical structures capital expenditure times series beginning 1890 for NAICS
+39                                                       The SAS System                              13:45 Friday, June 23, 2017
+
+240        4 digit industries*/
+241        PROC IMPORT OUT= CAPITAL.NAICSpre1958structures
+242                    DATAFILE= "R:\MFP DataSets\Manufacturing\Capital\SAS Inputs
+242      ! archive\NAICSstructures1890to1958_Nonemployer_Ratios.xls"
+243                    DBMS=EXCEL REPLACE;
+244        			SHEET = 'Structures 1890-1958';
+245        RUN;
+
+NOTE: CAPITAL.NAICSPRE1958STRUCTURES data set was successfully created.
+NOTE: The data set CAPITAL.NAICSPRE1958STRUCTURES has 5934 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.68 seconds
+      cpu time            0.34 seconds
+      
+
+246        
+247        /*Creating macro variables for the names of NAICS Industries*/
+248        data _null_;
+249        set capital.indys nobs=x;
+250              call symputx ("NAICS_Indy"!!left(_n_),NAICS);
+251         run;
+
+NOTE: Numeric values have been converted to character values at the places given by: (Line):(Column).
+      250:40   
+NOTE: There were 86 observations read from the data set CAPITAL.INDYS.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           16.15 seconds
+      cpu time            10.48 seconds
+      

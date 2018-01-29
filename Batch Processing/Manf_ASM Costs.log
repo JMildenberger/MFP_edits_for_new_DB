@@ -1,0 +1,574 @@
+1                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.50 seconds
+      cpu time            0.48 seconds
+      
+1          /* ASM Cost Program
+2            Created by - Jennifer Kim
+3            Last Modified - 01/15/2016
+4            Modifed by - Chris Morris */
+5          
+6          options symbolgen;
+7          
+8          libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+9          libname capital 'Q:\MFP\SAS Libraries\Manufacturing\Capital\capital';
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+10         libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
+NOTE: Libref COMP was successfully assigned as follows: 
+      Engine:        V9 
+2                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\comp
+11         
+12         
+13         /*Creates macro variable from textfile*/
+14         data _null_;
+15               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+16               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+17               input updateid firstyr lastyr baseperiod;
+18               call symput('lastyr', trim(left(put(lastyr, 4.))));
+19         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+20         
+21         
+22         /* Read in Nonemployer ratios and Intrasectorals */
+23         data work.NE (rename=(Value=NE_ratio));
+24         	length NAICS $4;
+25         	set IP.Final_NonEmpRatios;
+26         run;
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 2924 observations read from the data set IP.FINAL_NONEMPRATIOS.
+NOTE: The data set WORK.NE has 2924 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+3                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+
+27         
+28         proc sort data=work.NE nodupkey;
+29         	by NAICS year;
+30         run;
+
+NOTE: There were 2924 observations read from the data set WORK.NE.
+NOTE: 430 observations with duplicate key values were deleted.
+NOTE: The data set WORK.NE has 2494 observations and 7 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.00 seconds
+      
+
+31         
+32         data work.Intrasectorals (rename=(Value=Intrasectoral));
+33         	length NAICS $4;
+34         	set IP.Final_Intrasectorals;
+35         run;
+
+WARNING: Multiple lengths were specified for the variable NAICS by input data set(s). This can cause truncation of data.
+NOTE: There were 2924 observations read from the data set IP.FINAL_INTRASECTORALS.
+NOTE: The data set WORK.INTRASECTORALS has 2924 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+36         
+37         proc sort data=work.Intrasectorals nodupkey;
+38         	by NAICS year;
+39         run;
+
+NOTE: There were 2924 observations read from the data set WORK.INTRASECTORALS.
+NOTE: 430 observations with duplicate key values were deleted.
+NOTE: The data set WORK.INTRASECTORALS has 2494 observations and 7 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+4                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+
+40         
+41         
+42         /* Import ASM MFP Cost files from Excel */
+43         libname ASM XLSX 'R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\ASM MFP Cost Files.xlsx';
+NOTE: Libref ASM was successfully assigned as follows: 
+      Engine:        XLSX 
+      Physical Name: R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\ASM MFP Cost Files.xlsx
+44         
+45         data work.Cost_Elect;
+46         	set ASM.Cost_Elect;
+47         run;
+
+NOTE: The import data set has 2494 observations and 6 variables.
+NOTE: There were 2494 observations read from the data set ASM.Cost_Elect.
+NOTE: The data set WORK.COST_ELECT has 2494 observations and 6 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.09 seconds
+      
+
+48         
+49         data work.Quan_Elect;
+50         	set ASM.Quan_Elect;
+51         run;
+
+NOTE: The import data set has 2494 observations and 3 variables.
+NOTE: There were 2494 observations read from the data set ASM.Quan_Elect.
+NOTE: The data set WORK.QUAN_ELECT has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.09 seconds
+      
+
+52         
+53         data work.Cost_Fuels;
+54         	set ASM.Cost_Fuels;
+55         run;
+
+NOTE: The import data set has 2494 observations and 3 variables.
+5                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: There were 2494 observations read from the data set ASM.Cost_Fuels.
+NOTE: The data set WORK.COST_FUELS has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+56         
+57         data work.Cost_Mat;
+58         	set ASM.Cost_Mat;
+59         run;
+
+NOTE: The import data set has 2494 observations and 3 variables.
+NOTE: There were 2494 observations read from the data set ASM.Cost_Mat.
+NOTE: The data set WORK.COST_MAT has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.10 seconds
+      cpu time            0.09 seconds
+      
+
+60         
+61         data work.Inv_1987_2011;
+62         	set ASM.Inv_1987_2011;
+63         run;
+
+NOTE: The import data set has 2150 observations and 5 variables.
+NOTE: There were 2150 observations read from the data set ASM.Inv_1987_2011.
+NOTE: The data set WORK.INV_1987_2011 has 2150 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.11 seconds
+      cpu time            0.07 seconds
+      
+
+64         
+65         data work.Inv_2012_fwd;
+66         	set ASM.Inv_2012_fwd;
+67         run;
+
+NOTE: The import data set has 344 observations and 8 variables.
+NOTE: There were 344 observations read from the data set ASM.Inv_2012_fwd.
+6                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The data set WORK.INV_2012_FWD has 344 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+68         
+69         data work.ASM_Capital;
+70         	set ASM.ASM_Capital;
+71         run;
+
+NOTE: The import data set has 1204 observations and 7 variables.
+NOTE: There were 1204 observations read from the data set ASM.ASM_Capital.
+NOTE: The data set WORK.ASM_CAPITAL has 1204 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.07 seconds
+      
+
+72         
+73         data work.ASM_Capital_hist;
+74         	set ASM.ASM_Capital_hist;
+75         run;
+
+NOTE: The import data set has 4128 observations and 5 variables.
+NOTE: There were 4128 observations read from the data set ASM.ASM_Capital_hist.
+NOTE: The data set WORK.ASM_CAPITAL_HIST has 4128 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.18 seconds
+      cpu time            0.18 seconds
+      
+
+76         
+77         /* Cost of Electricity $thousands*/
+78         proc sql;
+79         create table	IP.CostofElectricity as
+80         select			a.NAICS, a.Year,
+81         			 	a.Cost_Elect*b.NE_ratio as CostofElectricity
+82         from			work.Cost_Elect a, work.NE b
+83         where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.;
+7                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+NOTE: Table IP.COSTOFELECTRICITY created, with 2494 rows and 3 columns.
+
+84         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+85         
+86         /* Cost of Fuels $thousands*/
+87         proc sql;
+88         create table	IP.CostofFuels as
+89         select			a.NAICS, a.Year,
+90         			 	(a.Cost_Fuels*b.NE_ratio) as CostofFuels
+91         from			work.Cost_Fuels a, work.NE b
+92         where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.;
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+NOTE: Table IP.COSTOFFUELS created, with 2494 rows and 3 columns.
+
+93         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+94         
+95         /* Cost of Materials $thousands*/
+96         proc sql;
+97         create table	IP.CostofSupplies_NE as  /* i.e., unadjusted cost of materials */
+98         select			a.NAICS, a.Year,
+99         			 	(a.Cost_Mat*b.NE_ratio) as CostofSupplies_NE
+100        from			work.Cost_Mat a, work.NE b
+101        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.;
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+NOTE: Table IP.COSTOFSUPPLIES_NE created, with 2494 rows and 3 columns.
+
+102        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+8                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+103        
+104        /*Removing intrasectorals from cost of materials*/
+105        proc sql;
+106        create table	IP.CostofSupplies as /* i.e., final cost of materials */
+107        select			a.NAICS, a.Year,
+108        				a.CostofSupplies_NE - b.Intrasectoral*1000 as CostofSupplies
+109        from			IP.CostofSupplies_NE a, work.Intrasectorals b
+110        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.;
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+NOTE: Table IP.COSTOFSUPPLIES created, with 2494 rows and 3 columns.
+
+111        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+112        
+113        /* Quantity of Electricity $thousands*/
+114        proc sql;
+115        create table	IP.QuanofElectricity as
+116        select			a.NAICS, a.Year,
+117        			 	(a.Quan_Elect*b.NE_ratio) as QuanofElectricity
+118        from			work.Quan_Elect a, work.NE b
+119        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.;
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+NOTE: Table IP.QUANOFELECTRICITY created, with 2494 rows and 3 columns.
+
+120        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+121        
+122        /*Averaging end of year and beginning of year for each for 2012-forward*/
+123        proc sql;
+9                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+124        create table	work.Inv_2012_fwd2 as
+125        select			NAICS, Year,
+126        				mean(Finished_goods_BOY, Finished_goods_EOY) as Finished_goods,
+127        				mean(Work_in_process_BOY, Work_in_process_EOY) as Work_in_process,
+128        				mean(Materials_and_supplies_BOY, Materials_and_supplies_EOY) as Materials_and_supplies
+129        from 			work.Inv_2012_fwd
+130        order by		Year, NAICS;
+NOTE: Table WORK.INV_2012_FWD2 created, with 344 rows and 5 columns.
+
+131        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+132        
+133        /*1987-2011 inventories are read into SAS already averaged; the proc append stacks the 1987-2011 and the 2012-forward
+134          data*/
+135        proc append base=work.Inv_1987_2011 data=work.Inv_2012_fwd2;
+136        run;
+
+NOTE: Appending WORK.INV_2012_FWD2 to WORK.INV_1987_2011.
+NOTE: There were 344 observations read from the data set WORK.INV_2012_FWD2.
+NOTE: 344 observations added.
+NOTE: The data set WORK.INV_1987_2011 has 2494 observations and 5 variables.
+NOTE: PROCEDURE APPEND used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+137        
+138        /*Final inventories data set, saved to the Comp library ($millions)*/
+139        proc sql;
+140        create table	comp.intories as
+141        select			a.NAICS, a.Year,
+142        				(a.Finished_goods*b.NE_ratio)/1000 as Final_Goods,
+143        				(a.Work_in_process*b.NE_ratio)/1000 as Work_in_Process,
+144        				(a.Materials_and_supplies*b.NE_ratio)/1000 as Materials_Supplies
+145        from 			work.Inv_1987_2011 a, work.NE b
+146        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.
+10                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+147        order by		NAICS, Year;
+NOTE: Table COMP.INTORIES created, with 2494 rows and 5 columns.
+
+148        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+149        
+150        /* Capital Expenditures ($millions) */
+151        proc sql;
+152        create table	capital.NewCapExp as
+153        select			a.NAICS, a.Year,
+154                        (a.Structures*b.NE_ratio)/1000 as Structures,
+155        				(a.Vehicles*b.NE_ratio)/1000 as Vehicles,
+156        				(a.Computers*b.NE_ratio)/1000 as Computers,
+157        				(a.All_Other_Equipment*b.NE_ratio)/1000 as All_Other_Equipment,
+158        				(a.Total*b.NE_ratio)/1000 as Total
+159        from			work.ASM_Capital a, work.NE b
+160        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+161        order by		NAICS, Year;
+NOTE: Table CAPITAL.NEWCAPEXP created, with 1204 rows and 7 columns.
+
+162        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+163        
+164        /* Update ASM Capital Historical Data from 1958-2005 to 1958-update year by holding 2005 values constant */
+165        proc sql;
+166        create table	work.temp as
+167        select			*
+168        from 			work.NE a full join work.ASM_capital_hist b
+169        on				a.NAICS=b.NAICS and a.Year=b.Year;
+WARNING: Variable NAICS already exists on file WORK.TEMP.
+11                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+WARNING: Variable Year already exists on file WORK.TEMP.
+NOTE: Table WORK.TEMP created, with 4988 rows and 10 columns.
+
+170        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+171        
+172        data work.temp2 (drop=NE_ratio);
+173        set work.temp;
+174        if Year<2006 then delete;
+175        run;
+
+NOTE: There were 4988 observations read from the data set WORK.TEMP.
+NOTE: The data set WORK.TEMP2 has 860 observations and 9 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+176        
+177        proc sql;
+178        create table	work.temp3 as
+179        select			a.NAICS, a.Year, b.Structures, b.Equipment, b.Total
+180        from 			work.temp2 a, work.ASM_capital_hist b
+181        where			a.NAICS=b.NAICS and b.Year=2005;
+NOTE: Table WORK.TEMP3 created, with 860 rows and 5 columns.
+
+182        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+183        
+184        proc append base=work.ASM_capital_hist data=work.temp3;
+185        run;
+
+12                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Appending WORK.TEMP3 to WORK.ASM_CAPITAL_HIST.
+NOTE: There were 860 observations read from the data set WORK.TEMP3.
+NOTE: 860 observations added.
+NOTE: The data set WORK.ASM_CAPITAL_HIST has 4988 observations and 5 variables.
+NOTE: PROCEDURE APPEND used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+186        
+187        
+188        /* Generate Nonemployer ratios back to 1958 by holding 2002 ratios constant */
+189        proc sql;
+190        create table	work.NE2002 as
+191        select			a.NAICS, a.Year,
+192        				b.NE_ratio as NE_ratio_2002
+193        from			work.ASM_Capital_hist a, work.NE b
+194        where			a.NAICS=b.NAICS and b.Year=2002;
+NOTE: Table WORK.NE2002 created, with 4988 rows and 3 columns.
+
+195        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+196        
+197        proc sql;
+198        create table	work.NE_hist as
+199        select			a.NAICS, a.Year, a.NE_ratio_2002, b.NE_ratio
+200        from			work.NE2002 a left join work.NE b
+201        on				a.NAICS=b.NAICS and a.Year=b.Year;
+NOTE: Table WORK.NE_HIST created, with 4988 rows and 4 columns.
+
+202        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+13                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+203        
+204        data work.NE_hist;
+205           set work.NE_hist;
+206           if year<1987 then NE_ratio_hist = NE_ratio_2002;
+207           if year>=1987 then NE_ratio_hist = NE_ratio;
+208        run;
+
+NOTE: There were 4988 observations read from the data set WORK.NE_HIST.
+NOTE: The data set WORK.NE_HIST has 4988 observations and 5 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+209        
+210        /* Capital Expenditures - historical ($millions) */
+211        proc sql;
+212        create table	capital.Naicscapexp as
+213        select			a.NAICS, a.Year,
+214                        (a.Structures*b.NE_ratio_hist)/1000 as Structures,
+215        				(a.Equipment*b.NE_ratio_hist)/1000 as Equipment,
+216        				(a.Total*b.NE_ratio_hist)/1000 as Total
+217        from			work.ASM_Capital_hist a, work.NE_hist b
+218        where			a.NAICS=b.NAICS and a.Year=b.Year and a.Year<=&lastyr.
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+219        order by		NAICS, Year;
+NOTE: Table CAPITAL.NAICSCAPEXP created, with 4988 rows and 5 columns.
+
+220        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.01 seconds
+      
+
+221        
+222        proc datasets library=work kill noprint;
+NOTE: Deleting WORK.ASM_CAPITAL (memtype=DATA).
+NOTE: Deleting WORK.ASM_CAPITAL_HIST (memtype=DATA).
+NOTE: Deleting WORK.COST_ELECT (memtype=DATA).
+NOTE: Deleting WORK.COST_FUELS (memtype=DATA).
+14                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Deleting WORK.COST_MAT (memtype=DATA).
+NOTE: Deleting WORK.INTRASECTORALS (memtype=DATA).
+NOTE: Deleting WORK.INV_1987_2011 (memtype=DATA).
+NOTE: Deleting WORK.INV_2012_FWD (memtype=DATA).
+NOTE: Deleting WORK.INV_2012_FWD2 (memtype=DATA).
+NOTE: Deleting WORK.NE (memtype=DATA).
+NOTE: Deleting WORK.NE2002 (memtype=DATA).
+NOTE: Deleting WORK.NE_HIST (memtype=DATA).
+NOTE: Deleting WORK.QUAN_ELECT (memtype=DATA).
+NOTE: Deleting WORK.TEMP (memtype=DATA).
+NOTE: Deleting WORK.TEMP2 (memtype=DATA).
+NOTE: Deleting WORK.TEMP3 (memtype=DATA).
+223        run;
+
+224        quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           1.94 seconds
+      cpu time            1.46 seconds
+      

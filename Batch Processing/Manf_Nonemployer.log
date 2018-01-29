@@ -1,0 +1,1081 @@
+1                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.52 seconds
+      cpu time            0.45 seconds
+      
+1          /*NonEmployer Program
+2            Created by - Chris Morris
+3            Last Modified - 12/31/2015
+4            Modifed by - Chris Morris */
+5          
+6          options symbolgen;
+7          
+8          libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+9          libname SQL ODBC DSN=IPS2DB schema=sas;
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPS2DB
+10         
+11         
+12         /*Creates macro variables from textfile*/
+2                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+13         data _null_;
+14               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+15               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+16               input updateid firstyr lastyr baseperiod;
+17               call symput('updateid', trim(left(put(updateid, 3.))));
+18               call symput('lastyr', trim(left(put(lastyr, 4.))));
+19               call symput('baseperiod', trim(left(put(baseperiod, 2.))));
+20         run;
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.04 seconds
+      
+
+21         
+22         
+23         /*Create macro variables for first and last year of data*/
+24         data _null_;
+25               set sql.update (where=(updateid=&updateid));
+SYMBOLGEN:  Macro variable UPDATEID resolves to 212
+26               call symput('updatestatusid', updatestatusid);
+27         run;
+
+NOTE: There were 1 observations read from the data set SQL.update.
+      WHERE updateid=212;
+NOTE: DATA statement used (Total process time):
+      real time           0.12 seconds
+      cpu time            0.03 seconds
+      
+
+SYMBOLGEN:  Macro variable UPDATESTATUSID resolves to Loading     
+3                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+28         
+29         %let dataset = %sysfunc(ifc(&updatestatusid=Loading,sql.reportbuilder_preliminary,sql.reportbuilder_current));
+30         %put &dataset;
+SYMBOLGEN:  Macro variable DATASET resolves to sql.reportbuilder_preliminary
+sql.reportbuilder_preliminary
+31         
+32         
+33         /*Read in ValProd and LComp files*/
+34         Proc sql;
+35         	Create table 	work.ManufacturingSource as
+36         	select Distinct IndustryID, Industry as IndustryCodeID, DataSeriesID, DataArrayID, YearID, CensusPeriodID, Year,
+36       ! input(substr(YearID,5,1),1.) as YearNo, Value
+37         	from 			&dataset
+SYMBOLGEN:  Macro variable DATASET resolves to sql.reportbuilder_preliminary
+38         	where 			(UpdateID=&updateid) and DataSeriesID in ('XT38','XT39', 'XT49') and (substr(IndustryID,3,1)="3") and
+38       ! DigitID = "6-Digit"
+SYMBOLGEN:  Macro variable UPDATEID resolves to 212
+39         	order by 		IndustryID, DataSeriesID, YearID;
+NOTE: Table WORK.MANUFACTURINGSOURCE created, with 18200 rows and 9 columns.
+
+40         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           2.94 seconds
+      cpu time            0.12 seconds
+      
+
+41         
+42         
+43         /*Create table for employer, non-employer, and total value of shipments*/
+44         proc sql;
+45         	create table	work.VsIndAnn as
+46         	select			*
+47         	from			work.ManufacturingSource
+48         	where			(DataSeriesID = 'XT38' or DataSeriesID ='XT39') and CensusPeriodID>=12;
+NOTE: Table WORK.VSINDANN created, with 5824 rows and 9 columns.
+
+49         
+50         	create table	work.VsNonEmp as
+51         	select			*
+52         	from			work.ManufacturingSource
+4                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+53         	where			DataSeriesID = 'XT49' and CensusPeriodID>=12;
+NOTE: Table WORK.VSNONEMP created, with 5824 rows and 9 columns.
+
+54         
+55         	create table 	work.VsTotal as
+56         	select 			a.IndustryCodeID,"VsTotal" as DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.Year, a.YearNo,
+56       ! a.Value+b.Value as Value
+57         	from 			work.VsIndAnn a
+58         	inner join		work.VsNonEmp b
+59         	on				(a.IndustryCodeID=b.IndustryCodeID) and (a.YearID=b.YearID) and (a.CensusPeriodID=b.CensusPeriodID)
+60         					and (a.Year=b.Year) and (a.YearNo=b.YearNo);
+NOTE: Table WORK.VSTOTAL created, with 5824 rows and 7 columns.
+
+61         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+62         
+63         
+64         /*Aggregate  Employer and Non-Employer Industry Value of Shipments to 4 Digit Naics*/
+65         proc sql;
+66         	create table 	work.Final_VsIndAnn_agg as
+67         	select 			substr(IndustryCodeID,1,4) as NAICS, DataSeriesID, YearID, CensusPeriodID, YearNo, Year,
+68         					sum(value) as Value
+69         	from			work.VsIndAnn
+70         	group by		NAICS, DataSeriesID, YearID, CensusPeriodID, YearNo, Year;
+NOTE: Table WORK.FINAL_VSINDANN_AGG created, with 1376 rows and 7 columns.
+
+71         
+72         	create table 	work.Final_VsNonEmp_agg as
+73         	select 			substr(IndustryCodeID,1,4) as NAICS, DataSeriesID, YearID, CensusPeriodID, YearNo, Year,
+74         					sum(value) as Value
+75         	from			work.VsNonEmp
+76         	group by		NAICS, DataSeriesID, YearID, CensusPeriodID, YearNo, Year;
+NOTE: Table WORK.FINAL_VSNONEMP_AGG created, with 1376 rows and 7 columns.
+
+77         
+78         	create table 	work.Final_VsTotal_agg as
+5                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+79         	select 			substr(IndustryCodeID,1,4) as NAICS, DataSeriesCodeID, YearID, CensusPeriodID, YearNo, Year,
+80         					sum(value) as Value
+81         	from			work.VsTotal
+82         	group by		NAICS, DataSeriesCodeID, YearID, CensusPeriodID, YearNo, Year;
+NOTE: Table WORK.FINAL_VSTOTAL_AGG created, with 1376 rows and 7 columns.
+
+83         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.04 seconds
+      
+
+84         
+85         
+86         /*--------------------------------------------*/
+87         /*--------Calculate linked VsIndAnn-----------*/
+88         /*--------------------------------------------*/
+89         
+90         /*	Forward linking ratios are calculated for each CensusPeriodID (Year 6/ Year 1) */
+91         Proc sql;
+92         	Create table	work.CensusRatioAdjForward as
+93         	Select 			a.Naics, a.DataSeriesID, a.CensusPeriodID, b.Value/a.Value as Ratio
+94         	from 			work.Final_VsIndAnn_agg a
+95         	inner join		work.Final_VsIndAnn_agg b
+96         	on				(a.Naics=b.Naics) and (a.DataSeriesID=b.DataSeriesID) and
+97         					(a.CensusPeriodID-1=b.CensusPeriodID) and (a.YearNo=1) and (b.YearNo=6)
+98         	where			a.CensusPeriodID>&baseperiod;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+NOTE: Table WORK.CENSUSRATIOADJFORWARD created, with 86 rows and 4 columns.
+
+99         
+100        /*	Backward linking ratios are calculated for each CensusPeriodID (Year 1 / Year 6) */
+101        	Create table	work.CensusRatioAdjBack as
+102        	Select 			a.Naics, a.DataSeriesID, a.CensusPeriodID, b.Value/a.Value as Ratio
+103        	from 			work.Final_VsIndAnn_agg a
+104        	inner join		work.Final_VsIndAnn_agg b	
+105        	on				(a.Naics=b.Naics) and (a.DataSeriesID=b.DataSeriesID) and
+106        					(a.CensusPeriodID+1=b.CensusPeriodID) and (a.YearNo=6) and (b.YearNo=1)
+107        	where			a.CensusPeriodID<&baseperiod;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+6                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.CENSUSRATIOADJBACK created, with 86 rows and 4 columns.
+
+108        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.03 seconds
+      
+
+109        
+110        /*	Working files for the compounding of linking ratios are created */
+111        data work.BackWorking;
+112        	set work.CensusRatioAdjBack;
+113        run;
+
+NOTE: There were 86 observations read from the data set WORK.CENSUSRATIOADJBACK.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+114        
+115        data work.ForwardWorking;
+116        	set work.CensusRatioAdjForward;
+117        run;
+
+NOTE: There were 86 observations read from the data set WORK.CENSUSRATIOADJFORWARD.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+118        
+119        
+120        /*  Define Census Period Linking Macro
+121        	This macro compounds the linking ratios for the CensusPeriods prior to the base period in step 1. In step 2
+122           	the macro compounds the linking ratios for the Census Periods after the base period
+123        	Step 1 counts down from the base period to Census Period 9 which is the first period of published data.
+124        	Step 2 counts up from the base period to Census Period 20. Once measures are published beyond Period 20 the code
+7                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+125        	will need to be updated. */
+126        %macro compound;
+127        %do i = %eval(&baseperiod-1) %to 9 %by -1;
+128        	Proc sql;
+129        		Create table	work.BackCompound&i as
+130        		Select			a.Naics, a.DataSeriesID, a.CensusPeriodID,
+131        						case 	when a.CensusPeriodID>=&i then c.ratio
+132        								else a.ratio*b.ratio
+133        						end as ratio
+134        		from			work.CensusRatioAdjBack a
+135        		left 			join work.BackWorking b
+136        		on 				(a.Naics=b.Naics) and (a.DataSeriesID=b.DataSeriesID) and
+137        						(b.CensusPeriodID=a.CensusPeriodID+1)
+138        		left 			join work.BackWorking c
+139        		on 				(a.Naics=c.Naics) and (a.DataSeriesID=c.DataSeriesID) and
+140        						(c.CensusPeriodID=a.CensusPeriodID)
+141        		order by 		Naics, DataSeriesID, CensusPeriodID;
+142        	quit;
+143        
+144        	data work.BackWorking;
+145        		set work.BackCompound&i;
+146        	run;
+147        %end;
+148        
+149        %do i = %eval(&baseperiod+1) %to 20;
+150        	Proc sql;
+151        		Create table	work.ForwardCompound&i as
+152        		Select			a.Naics, a.DataSeriesID, a.CensusPeriodID,
+153        						case 	when a.CensusPeriodID<=&i then c.ratio
+154        								else a.ratio*b.ratio
+155        						end as ratio
+156        		from			work.CensusRatioAdjForward a
+157        		left join 		work.ForwardWorking b
+158        		on 				(a.Naics=b.Naics) and (a.DataSeriesID=b.DataSeriesID) and
+159        						(b.CensusPeriodID=a.CensusPeriodID)
+160        		left join 		work.ForwardWorking c
+161        		on 				(a.Naics=c.Naics) and (a.DataSeriesID=c.DataSeriesID) and
+162        						(c.CensusPeriodID=a.CensusPeriodID)
+163        		order by 		Naics, DataSeriesID, CensusPeriodID;
+164        		quit;
+8                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+165        
+166        	data work.ForwardWorking;
+167        		set work.ForwardCompound&i;
+168        	run;
+169        %end;
+170        %mend compound;
+171        
+172        
+173        /*Call Census Period Linking Ratio Macro*/
+174        %compound;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+SYMBOLGEN:  Macro variable I resolves to 12
+SYMBOLGEN:  Macro variable I resolves to 12
+NOTE: Table WORK.BACKCOMPOUND12 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 12
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND12.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 11
+SYMBOLGEN:  Macro variable I resolves to 11
+NOTE: Table WORK.BACKCOMPOUND11 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 11
+
+9                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND11.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 10
+SYMBOLGEN:  Macro variable I resolves to 10
+NOTE: Table WORK.BACKCOMPOUND10 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 10
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND10.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 9
+SYMBOLGEN:  Macro variable I resolves to 9
+NOTE: Table WORK.BACKCOMPOUND9 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 9
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND9.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+10                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+SYMBOLGEN:  Macro variable I resolves to 14
+SYMBOLGEN:  Macro variable I resolves to 14
+NOTE: Table WORK.FORWARDCOMPOUND14 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 14
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND14.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 15
+SYMBOLGEN:  Macro variable I resolves to 15
+NOTE: Table WORK.FORWARDCOMPOUND15 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 15
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND15.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+11                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable I resolves to 16
+SYMBOLGEN:  Macro variable I resolves to 16
+NOTE: Table WORK.FORWARDCOMPOUND16 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 16
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND16.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 17
+SYMBOLGEN:  Macro variable I resolves to 17
+NOTE: Table WORK.FORWARDCOMPOUND17 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 17
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND17.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 18
+SYMBOLGEN:  Macro variable I resolves to 18
+NOTE: Table WORK.FORWARDCOMPOUND18 created, with 86 rows and 4 columns.
+
+12                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 18
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND18.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 19
+SYMBOLGEN:  Macro variable I resolves to 19
+NOTE: Table WORK.FORWARDCOMPOUND19 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 19
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND19.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 20
+SYMBOLGEN:  Macro variable I resolves to 20
+NOTE: Table WORK.FORWARDCOMPOUND20 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+13                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+SYMBOLGEN:  Macro variable I resolves to 20
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND20.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+175        
+176        
+177        /*	The compounded linking ratios are multiplied by the Census chunk values to create a continuous series */
+178        Proc sql;
+179        	Create table	work.Final_VsIndAnn as
+180        	Select			a.Naics, a.DataSeriesID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+181        					case	when a.CensusPeriodID<&baseperiod then a.Value*b.Ratio
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+182        							when a.CensusPeriodID>&baseperiod then a.Value*c.Ratio
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+183        							when a.CensusPeriodID=&baseperiod then a.Value
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+184        					end as Value
+185        	from			work.Final_VsIndAnn_agg a
+186        	left join		work.BackWorking b
+187        	on				(a.Naics=b.Naics) and (a.DataSeriesID=b.DataSeriesID) and (a.CensusPeriodID=b.CensusPeriodID)
+188        	left join		work.ForwardWorking c
+189        	on				(a.Naics=c.Naics) and (a.DataSeriesID=c.DataSeriesID) and (a.CensusPeriodID=c.CensusPeriodID)
+190        	order by		Naics, DataSeriesID, YearID;
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.FINAL_VSINDANN created, with 1376 rows and 7 columns.
+
+191        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.04 seconds
+      
+
+192        
+14                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+193        
+194        /*----------------------------------------*/
+195        /*------Calculating linked VsTotal--------*/
+196        /*----------------------------------------*/
+197        
+198        /*	Forward linking ratios are calculated for each CensusPeriodID (Year 6/ Year 1) */
+199        Proc sql;
+200        	Create table	work.CensusRatioAdjForward as
+201        	Select 			a.Naics, a.DataSeriesCodeID, a.CensusPeriodID, b.Value/a.Value as Ratio
+202        	from 			work.Final_VsTotal_agg a
+203        	inner join		work.Final_VsTotal_agg b
+204        	on				(a.Naics=b.Naics) and (a.DataSeriesCodeID=b.DataSeriesCodeID) and
+205        					(a.CensusPeriodID-1=b.CensusPeriodID) and (a.YearNo=1) and (b.YearNo=6)
+206        	where			a.CensusPeriodID>&baseperiod;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+NOTE: Table WORK.CENSUSRATIOADJFORWARD created, with 86 rows and 4 columns.
+
+207        
+208        /*	Backward linking ratios are calculated for each CensusPeriodID (Year 1 / Year 6) */
+209        	Create table	work.CensusRatioAdjBack as
+210        	Select 			a.Naics, a.DataSeriesCodeID, a.CensusPeriodID, b.Value/a.Value as Ratio
+211        	from 			work.Final_VsTotal_agg a
+212        	inner join		work.Final_VsTotal_agg b	
+213        	on				(a.Naics=b.Naics) and (a.DataSeriesCodeID=b.DataSeriesCodeID) and
+214        					(a.CensusPeriodID+1=b.CensusPeriodID) and (a.YearNo=6) and (b.YearNo=1)
+215        	where			a.CensusPeriodID<&baseperiod;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+NOTE: Table WORK.CENSUSRATIOADJBACK created, with 86 rows and 4 columns.
+
+216        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+217        
+218        /*	Working files for the compounding of linking ratios are created */
+219        data work.BackWorking;
+220        	set work.CensusRatioAdjBack;
+221        run;
+15                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+NOTE: There were 86 observations read from the data set WORK.CENSUSRATIOADJBACK.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+222        
+223        data work.ForwardWorking;
+224        	set work.CensusRatioAdjForward;
+225        run;
+
+NOTE: There were 86 observations read from the data set WORK.CENSUSRATIOADJFORWARD.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+226        
+227        
+228        /*  Define Census Period Linking Ratio 	
+229        	This macro compounds the linking ratios for the CensusPeriods prior to the base period in step 1. In step 2
+230           	the macro compounds the linking ratios for the Census Periods after the base period
+231        	Step 1 counts down from the base period to Census Period 9 which is the first period of published data.
+232        	Step 2 counts up from the base period to Census Period 20. Once measures are published beyond Period 20 the code
+233        	will need to be updated. */
+234        %macro compound;
+235        %do i = %eval(&baseperiod-1) %to 9 %by -1;
+236        	Proc sql;
+237        		Create table	work.BackCompound&i as
+238        		Select			a.Naics, a.DataSeriesCodeID, a.CensusPeriodID,
+239        						case 	when a.CensusPeriodID>=&i then c.ratio
+240        								else a.ratio*b.ratio
+241        						end as ratio
+242        		from			work.CensusRatioAdjBack a
+243        		left 			join work.BackWorking b
+244        		on 				(a.Naics=b.Naics) and (a.DataSeriesCodeID=b.DataSeriesCodeID) and
+245        						(b.CensusPeriodID=a.CensusPeriodID+1)
+16                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+246        		left 			join work.BackWorking c
+247        		on 				(a.Naics=c.Naics) and (a.DataSeriesCodeID=c.DataSeriesCodeID) and
+248        						(c.CensusPeriodID=a.CensusPeriodID)
+249        		order by 		Naics, DataSeriesCodeID, CensusPeriodID;
+250        	quit;
+251        
+252        	data work.BackWorking;
+253        		set work.BackCompound&i;
+254        	run;
+255        %end;
+256        
+257        %do i = %eval(&baseperiod+1) %to 20;
+258        	Proc sql;
+259        		Create table	work.ForwardCompound&i as
+260        		Select			a.Naics, a.DataSeriesCodeID, a.CensusPeriodID,
+261        						case 	when a.CensusPeriodID<=&i then c.ratio
+262        								else a.ratio*b.ratio
+263        						end as ratio
+264        		from			work.CensusRatioAdjForward a
+265        		left join 		work.ForwardWorking b
+266        		on 				(a.Naics=b.Naics) and (a.DataSeriesCodeID=b.DataSeriesCodeID) and
+267        						(b.CensusPeriodID=a.CensusPeriodID)
+268        		left join 		work.ForwardWorking c
+269        		on 				(a.Naics=c.Naics) and (a.DataSeriesCodeID=c.DataSeriesCodeID) and
+270        						(c.CensusPeriodID=a.CensusPeriodID)
+271        		order by 		Naics, DataSeriesCodeID, CensusPeriodID;
+272        		quit;
+273        
+274        	data work.ForwardWorking;
+275        		set work.ForwardCompound&i;
+276        	run;
+277        %end;
+278        %mend compound;
+279        
+280        
+281        /*Call Census Period Linking Ratio*/
+282        %compound;
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+SYMBOLGEN:  Macro variable I resolves to 12
+SYMBOLGEN:  Macro variable I resolves to 12
+17                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.BACKCOMPOUND12 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 12
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND12.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 11
+SYMBOLGEN:  Macro variable I resolves to 11
+NOTE: Table WORK.BACKCOMPOUND11 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 11
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND11.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 10
+SYMBOLGEN:  Macro variable I resolves to 10
+NOTE: Table WORK.BACKCOMPOUND10 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+18                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.03 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 10
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND10.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 9
+SYMBOLGEN:  Macro variable I resolves to 9
+NOTE: Table WORK.BACKCOMPOUND9 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 9
+
+NOTE: There were 86 observations read from the data set WORK.BACKCOMPOUND9.
+NOTE: The data set WORK.BACKWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+SYMBOLGEN:  Macro variable I resolves to 14
+SYMBOLGEN:  Macro variable I resolves to 14
+NOTE: Table WORK.FORWARDCOMPOUND14 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+19                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+SYMBOLGEN:  Macro variable I resolves to 14
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND14.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 15
+SYMBOLGEN:  Macro variable I resolves to 15
+NOTE: Table WORK.FORWARDCOMPOUND15 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 15
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND15.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 16
+SYMBOLGEN:  Macro variable I resolves to 16
+NOTE: Table WORK.FORWARDCOMPOUND16 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 16
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND16.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+20                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 17
+SYMBOLGEN:  Macro variable I resolves to 17
+NOTE: Table WORK.FORWARDCOMPOUND17 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 17
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND17.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 18
+SYMBOLGEN:  Macro variable I resolves to 18
+NOTE: Table WORK.FORWARDCOMPOUND18 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 18
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND18.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+21                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+SYMBOLGEN:  Macro variable I resolves to 19
+SYMBOLGEN:  Macro variable I resolves to 19
+NOTE: Table WORK.FORWARDCOMPOUND19 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 19
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND19.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 20
+SYMBOLGEN:  Macro variable I resolves to 20
+NOTE: Table WORK.FORWARDCOMPOUND20 created, with 86 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+SYMBOLGEN:  Macro variable I resolves to 20
+
+NOTE: There were 86 observations read from the data set WORK.FORWARDCOMPOUND20.
+NOTE: The data set WORK.FORWARDWORKING has 86 observations and 4 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+283        
+284        
+285        /*	The compounded linking ratios are multiplied by the Census chunk values to create a continuous series */
+22                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+286        Proc sql;
+287        	Create table	work.Final_VsTotal as
+288        	Select			a.Naics, a.DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+289        					case	when a.CensusPeriodID<&baseperiod then a.Value*b.Ratio
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+290        							when a.CensusPeriodID>&baseperiod then a.Value*c.Ratio
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+291        							when a.CensusPeriodID=&baseperiod then a.Value
+SYMBOLGEN:  Macro variable BASEPERIOD resolves to 13
+292        					end as Value
+293        	from			work.Final_VsTotal_agg a
+294        	left join		work.BackWorking b
+295        	on				(a.Naics=b.Naics) and (a.DataSeriesCodeID=b.DataSeriesCodeID) and (a.CensusPeriodID=b.CensusPeriodID)
+296        	left join		work.ForwardWorking c
+297        	on				(a.Naics=c.Naics) and (a.DataSeriesCodeID=c.DataSeriesCodeID) and (a.CensusPeriodID=c.CensusPeriodID)
+298        	order by		Naics, DataSeriesCodeID, YearID;
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.FINAL_VSTOTAL created, with 1376 rows and 7 columns.
+
+299        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+300        
+301        
+302        /*Calculate Non-Employer Ratio*/
+303        proc sql;
+304        	create table	work.NonEmpRat_02&lastyr. as
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+305        	select			a.Naics, "NonEmpRat" as DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+306        					case when a.value >0 and b.value is null then .
+307        						 else b.value/a.value
+308        					end as value
+309        	from			work.Final_VsIndAnn_agg as a
+310        	left join		work.Final_VsTotal_agg as b
+311        	on				(a.Naics=b.Naics) and (a.YearID=b.YearID) and (a.CensusPeriodID=b.CensusPeriodID) and (a.YearNo=b.YearNo) and
+311      ! (a.Year=b.Year);
+23                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.NONEMPRAT_022015 created, with 1376 rows and 7 columns.
+
+312        
+313        	create table	template as
+314        	select			Naics, YearID, CensusPeriodID, YearNo, Year,. as Value
+315        	from			IP.Final_Intrasectorals
+316        	order by		Naics, YearID, CensusPeriodID, YearNo, Year;
+NOTE: Table WORK.TEMPLATE created, with 2924 rows and 6 columns.
+
+317        
+318        	create table	work.NonEmpRat_8702 as
+319        	select			a.Naics, "NonEmpRat" as DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+320        					case when a.value is null and a.CensusPeriodID<12 then b.value
+321        					end as value
+322        	from			work.template as a
+323        	left join		work.NonEmpRat_02&lastyr. as b
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+324        	on				(a.Naics=b.Naics) and (b.YearID ='C12Y1A01');
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.NONEMPRAT_8702 created, with 2924 rows and 7 columns.
+
+325        
+326        	create table	work.NonEmpRat_87&lastyr. as
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+327        	select			a.Naics, "NonEmpRat" as DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+328        					case when a.CensusPeriodID>12 and a.value is null then b.value
+329        					end as value
+330        	from			work.NonEmpRat_8702 as a
+331        	left join		work.NonEmpRat_02&lastyr. as b
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+332        	on				(a.Naics=b.Naics) and (a.YearID=b.YearID) and (a.CensusPeriodID=b.CensusPeriodID) and (a.YearNo=b.YearNo) and
+332      ! (a.Year=b.Year);
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.NONEMPRAT_872015 created, with 2924 rows and 7 columns.
+
+333        
+334        	create table	work.NonEmpRat_87EY as
+335        	select			a.Naics, "NonEmpRat" as DataSeriesCodeID, a.YearID, a.CensusPeriodID, a.YearNo, a.Year,
+24                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+336        					case when a.value is null then b.value
+337        					     else a.value
+338        					end as value
+339        	from			work.Nonemprat_8702 as a
+340        	left join		work.NonEmpRat_02&lastyr. as b
+SYMBOLGEN:  Macro variable LASTYR resolves to 2015
+341        	on				(a.Naics=b.Naics) and (a.YearID=b.YearID);
+NOTE: Table WORK.NONEMPRAT_87EY created, with 2924 rows and 7 columns.
+
+342        
+343        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.06 seconds
+      
+
+344        
+345        /*LagtheNulls - Estimates missing data by holding the value constant to the prior year*/
+346        data work.AdjustedNonEmpRat;
+347        		set work.NonEmpRat_87EY;
+348        run;
+
+NOTE: There were 2924 observations read from the data set WORK.NONEMPRAT_87EY.
+NOTE: The data set WORK.ADJUSTEDNONEMPRAT has 2924 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+349        
+350        Proc sql;
+351        	Create table 	work.NonEmpRatAdjustmentWorking as
+352        	select			a.Naics, a.CensusPeriodID, a.DataSeriesCodeID, a.Yearid, a.YearNo, a.Year,
+353        					case 	when a.Value is null then b.Value
+354        							else a.Value
+355        					end 	as Value
+356        	from			work.AdjustedNonEmpRat a
+357        	left join 		work.AdjustedNonEmpRat b
+358        	on				(a.Naics=b.Naics) and (a.CensusPeriodID=b.CensusPeriodID) and
+359        					(a.DataSeriesCodeID=b.DataSeriesCodeID) and (b.YearNo=a.YearNo-1);
+25                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.NONEMPRATADJUSTMENTWORKING created, with 2924 rows and 7 columns.
+
+360        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.03 seconds
+      
+
+361        
+362        data IP.Final_NonEmpRatios;
+363        	set NonEmpRatAdjustmentWorking;
+364        run;
+
+NOTE: There were 2924 observations read from the data set WORK.NONEMPRATADJUSTMENTWORKING.
+NOTE: The data set IP.FINAL_NONEMPRATIOS has 2924 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+365        
+366        proc datasets library=work kill noprint;
+NOTE: Deleting WORK.ADJUSTEDNONEMPRAT (memtype=DATA).
+NOTE: Deleting WORK.BACKCOMPOUND10 (memtype=DATA).
+NOTE: Deleting WORK.BACKCOMPOUND11 (memtype=DATA).
+NOTE: Deleting WORK.BACKCOMPOUND12 (memtype=DATA).
+NOTE: Deleting WORK.BACKCOMPOUND9 (memtype=DATA).
+NOTE: Deleting WORK.BACKWORKING (memtype=DATA).
+NOTE: Deleting WORK.CENSUSRATIOADJBACK (memtype=DATA).
+NOTE: Deleting WORK.CENSUSRATIOADJFORWARD (memtype=DATA).
+NOTE: Deleting WORK.FINAL_VSINDANN (memtype=DATA).
+NOTE: Deleting WORK.FINAL_VSINDANN_AGG (memtype=DATA).
+NOTE: Deleting WORK.FINAL_VSNONEMP_AGG (memtype=DATA).
+NOTE: Deleting WORK.FINAL_VSTOTAL (memtype=DATA).
+NOTE: Deleting WORK.FINAL_VSTOTAL_AGG (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND14 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND15 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND16 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND17 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND18 (memtype=DATA).
+26                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Deleting WORK.FORWARDCOMPOUND19 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDCOMPOUND20 (memtype=DATA).
+NOTE: Deleting WORK.FORWARDWORKING (memtype=DATA).
+NOTE: Deleting WORK.MANUFACTURINGSOURCE (memtype=DATA).
+NOTE: Deleting WORK.NONEMPRATADJUSTMENTWORKING (memtype=DATA).
+NOTE: Deleting WORK.NONEMPRAT_022015 (memtype=DATA).
+NOTE: Deleting WORK.NONEMPRAT_8702 (memtype=DATA).
+NOTE: Deleting WORK.NONEMPRAT_872015 (memtype=DATA).
+NOTE: Deleting WORK.NONEMPRAT_87EY (memtype=DATA).
+NOTE: Deleting WORK.SASMACR (memtype=CATALOG).
+NOTE: File WORK.SASMACR (memtype=CATALOG) cannot be deleted because it is in use.
+NOTE: Deleting WORK.TEMPLATE (memtype=DATA).
+NOTE: Deleting WORK.VSINDANN (memtype=DATA).
+NOTE: Deleting WORK.VSNONEMP (memtype=DATA).
+NOTE: Deleting WORK.VSTOTAL (memtype=DATA).
+367        run;
+
+368        quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.06 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           5.10 seconds
+      cpu time            1.65 seconds
+      

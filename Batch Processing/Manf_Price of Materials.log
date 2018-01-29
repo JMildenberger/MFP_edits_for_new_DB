@@ -1,0 +1,1449 @@
+1                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           0.54 seconds
+      cpu time            0.37 seconds
+      
+1          /* Price of Materials - for Sectoral MFP
+2             Chris Morris & Jennifer Kim
+3             Last Modified: May 18, 2017 */
+4          
+5          options validvarname = V7;
+6          libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
+NOTE: Libref IP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\IP
+7          
+8          /*Creates macro variable from textfile*/
+9          data _null_;
+10               length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+11               infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
+12               input updateid firstyr lastyr baseperiod;
+13               call symput('lastyr', trim(left(put(lastyr, 4.))));
+14         run;
+
+2                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: The infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" is:
+      Filename=R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt,
+      RECFM=V,LRECL=32767,File Size (bytes)=69,
+      Last Modified=21Jun2017:11:36:04,
+      Create Time=11Jan2016:14:59:02
+
+NOTE: 1 record was read from the infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt".
+      The minimum record length was 22.
+      The maximum record length was 22.
+NOTE: DATA statement used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.03 seconds
+      
+
+15         
+16         /*****************************************************************************/
+17         /*  READ-IN INPUT FILES: DOMESTIC DEFLATORS, IMPORT DEFLATORS, AND IO TABLES */
+18         /****************************************************************************/
+19         
+20         /* Read in Domestic Deflators from IP SAS library */
+21         data work.IO_Domestic_all;
+22         	set IP.IO_deflators_all;
+23         run;
+
+NOTE: There were 9918 observations read from the data set IP.IO_DEFLATORS_ALL.
+NOTE: The data set WORK.IO_DOMESTIC_ALL has 9918 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+24         
+25         /*Read in the import prices and shares. These will be merged with the domestic deflators*/
+26         libname Import xlsx 'R:/MFP DataSets/Manufacturing/IP/Inputs/Import Deflators.xlsx';
+NOTE: Libref IMPORT was successfully assigned as follows: 
+      Engine:        XLSX 
+      Physical Name: R:/MFP DataSets/Manufacturing/IP/Inputs/Import Deflators.xlsx
+27         
+28         data work.Import_Deflators;
+29         	set Import.IO_Import_Deflators_Rebased;
+3                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+30         	if IO = "" then delete;
+31         run;
+
+NOTE: The import data set has 94 observations and 31 variables.
+NOTE: There were 94 observations read from the data set IMPORT.IO_Import_Deflators_Rebased.
+NOTE: The data set WORK.IMPORT_DEFLATORS has 93 observations and 31 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.36 seconds
+      cpu time            0.17 seconds
+      
+
+32         
+33         /*Transpose historical deflators. */
+34         Proc Sort data=work.Import_Deflators;
+35         	by IO;
+36         run;
+
+NOTE: There were 93 observations read from the data set WORK.IMPORT_DEFLATORS.
+NOTE: The data set WORK.IMPORT_DEFLATORS has 93 observations and 31 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+37         
+38         Proc Transpose data=work.Import_Deflators out=work.Import_Deflators_Flat1 (rename=(_NAME_= Year COL1=Value)
+38       ! drop=_LABEL_);
+39         	by IO;
+40         run;
+
+NOTE: There were 93 observations read from the data set WORK.IMPORT_DEFLATORS.
+NOTE: The data set WORK.IMPORT_DEFLATORS_FLAT1 has 2790 observations and 3 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+41         
+42         /*Convert year to numeric*/
+43         Proc Sql;
+4                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+44         	Create table  	work.Import_Deflators_Flat as
+45             Select          IO, input(substr(Year,2,4),4.) as Year, Value
+46             from 	     	work.Import_Deflators_Flat1;
+NOTE: Table WORK.IMPORT_DEFLATORS_FLAT created, with 2790 rows and 3 columns.
+
+47         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+48         
+49         /*Read in IO tables and Import matrices. These will be used to both combine import and domestic prices, as well as
+49       ! calculate the final price of
+50         materials and price of services.*/
+51         Proc Import out = work.IO97
+52         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/1997 Use on 2012 Basis.xlsx'
+53         			replace;
+54         run;
+
+NOTE: WORK.IO97 data set was successfully created.
+NOTE: The data set WORK.IO97 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.23 seconds
+      cpu time            1.21 seconds
+      
+
+55         
+56         Proc Import out = work.IO97_Import
+57         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/1997 Import Matrix on 2012 Basis.xlsx'
+58         			replace;
+59         run;
+
+NOTE: WORK.IO97_IMPORT data set was successfully created.
+NOTE: The data set WORK.IO97_IMPORT has 17866 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.74 seconds
+      cpu time            0.65 seconds
+      
+
+5                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+60         
+61         Proc Import out = work.IO02
+62         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/2002 Use on 2012 Basis.xlsx'
+63         			replace;
+64         run;
+
+NOTE: WORK.IO02 data set was successfully created.
+NOTE: The data set WORK.IO02 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.96 seconds
+      cpu time            2.07 seconds
+      
+
+65         
+66         Proc Import out = work.IO02_Import
+67         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/2002 Import Matrix on 2012 Basis.xlsx'
+68         			replace;
+69         run;
+
+NOTE: WORK.IO02_IMPORT data set was successfully created.
+NOTE: The data set WORK.IO02_IMPORT has 17994 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.19 seconds
+      cpu time            0.93 seconds
+      
+
+70         
+71         Proc Import out = work.IO07
+72         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/2007 Use on 2012 Basis.xlsx'
+73         			replace;
+74         run;
+
+NOTE: WORK.IO07 data set was successfully created.
+NOTE: The data set WORK.IO07 has 28343 observations and 7 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.61 seconds
+      cpu time            1.43 seconds
+      
+
+75         
+6                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+76         Proc Import out = work.IO07_Import
+77         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/2007 Import Matrix on 2012 Basis.xlsx'
+78         			replace;
+79         run;
+
+NOTE: WORK.IO07_IMPORT data set was successfully created.
+NOTE: The data set WORK.IO07_IMPORT has 17831 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           0.93 seconds
+      cpu time            0.84 seconds
+      
+
+80         
+81         /*Pull in industry classification table and merge to the previous table (IO_ALL). We only calculate IO ratios for
+81       ! materials
+82           NOTE: We only want materials and services */
+83         Proc Import out = work.Class
+84         			datafile = 'R:/MFP DataSets/Manufacturing/IP/Inputs/IO Tables/Commodity Classification.xlsb'
+85         			replace;
+86         run;
+
+NOTE: WORK.CLASS data set was successfully created.
+NOTE: The data set WORK.CLASS has 29060 observations and 3 variables.
+NOTE: PROCEDURE IMPORT used (Total process time):
+      real time           1.03 seconds
+      cpu time            0.87 seconds
+      
+
+87         
+88         /*****************************/
+89         /*IMPORT RATIOS AND IO TABLES*/
+90         /*****************************/
+91         
+92         /* Stack the IO datasets.*/
+93         Proc Sql;
+94         	Create table 	work.IO_All as
+95         	Select 			IO, Naics, PRO, TC, WHS, RET, PUR, 1997 as Year   from work.IO97 (rename=(Pro97=PRO TC97=TC WHS97=WHS
+95       ! RET97=RET PUR97=PUR)) union all
+96         	Select 			IO, Naics, PRO, TC, WHS, RET, PUR, 2002 as Year   from work.IO02 (rename=(Pro02=PRO TC02=TC WHS02=WHS
+96       ! RET02=RET PUR02=PUR)) union all
+7                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+97         	Select 			IO, Naics, PRO, TC, WHS, RET, PUR, 2007 as Year   from work.IO07 (rename=(Pro07=PRO TC07=TC WHS07=WHS
+97       ! RET07=RET PUR07=PUR))
+98         	order by		IO, Naics, Year;
+NOTE: Table WORK.IO_ALL created, with 85029 rows and 8 columns.
+
+99         quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.07 seconds
+      
+
+100        
+101        Proc Sql;
+102        	Create table	work.IO_All2 as
+103        	Select			a.Naics, a.IO, a.PRO, a.TC, a.WHS, a.RET, a.PUR, a.Year, b.classification
+104        	from 			work.IO_All a
+105        	inner join		work.Class b
+106        	on				(a.IO=b.IO) and (a.Naics=b.Naics)
+107        	where			b.classification in ('M','S')
+108        	order by		a.Naics, a.IO, a.Year;
+NOTE: Table WORK.IO_ALL2 created, with 79845 rows and 9 columns.
+
+109        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.09 seconds
+      
+
+110        
+111        /*Now combine the import matrices into a single datatable*/
+112        Proc Sql;
+113        	Create table 	work.IO_All_Import as
+114        	Select 			IO, Naics, Val, 1997 as Year   from	work.IO97_Import (rename=(Val97=Val)) union all
+115        	Select 		    IO, Naics, Val, 2002 as Year   from	work.IO02_Import (rename=(Val02=Val)) union all
+116        	Select 		    IO, Naics, Val, 2007 as Year   from work.IO07_Import (rename=(Val07=Val))
+117        	order by		IO, Naics, Year;
+NOTE: Table WORK.IO_ALL_IMPORT created, with 53691 rows and 4 columns.
+
+118        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+8                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+      real time           0.04 seconds
+      cpu time            0.06 seconds
+      
+
+119        
+120        /*Merge the IO_All with the IO_All_Import. This will allow us to find the import ratio for each industry/commodity
+120      ! combination*/
+121        Proc Sql;
+122        	Create table	work.IO_Merge2 as
+123        	Select			a.IO, a.Naics, a.PRO, a.TC, a.WHS, a.RET, a.PUR, a.Year, a.classification as Classification, b.Val,
+124        					case when b.Val/a.Pro is null then 0
+125        						 when b.Val/a.Pro > 1 then 1
+126        						 else b.Val/a.Pro
+127        					end as Import_Ratio
+128        	from 			work.IO_All2 a
+129        	left join		work.IO_All_Import b
+130        	on				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year=b.Year)
+131        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.IO_MERGE2 created, with 79845 rows and 11 columns.
+
+132        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.07 seconds
+      
+
+133        
+134        /*Pull out the Import Ratios to interpolate, since we only have ratios for 1997, 2002, and 2007*/
+135        Proc Sql;
+136        	Create table	work.Import_Ratios as
+137        	Select			IO, Naics, Import_Ratio, Year
+138        	from			work.IO_Merge2;
+NOTE: Table WORK.IMPORT_RATIOS created, with 79845 rows and 4 columns.
+
+139        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+9                                                        The SAS System                              13:44 Friday, June 23, 2017
+
+140        
+141        /*Interpolate import ratios*/
+142        /*Step:1 Create unique Naics - IO combinations with years from 1987-End Year (EY)*/
+143        Proc Sql;
+144        	Create table  	work.YearStructure_87EY as
+145            Select          Distinct a.IO, a.Naics, b.Year
+146            from 	     	work.Import_Ratios a
+147        	inner join		work.IO_Domestic_All b
+148        	on				(a.IO=b.IO);
+NOTE: Table WORK.YEARSTRUCTURE_87EY created, with 771835 rows and 3 columns.
+
+149        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.70 seconds
+      cpu time            1.26 seconds
+      
+
+150        
+151        /*Step:2 Join IO Import Ratios (every 5 years) to year structure*/
+152        Proc Sql;
+153        	Create table  	work.ImportRatios_5yrs as
+154            Select          Distinct a.IO, a.Naics, a.Year, b.Import_Ratio
+155            from 	     	work.YearStructure_87EY a
+156        	left join		work.Import_Ratios b
+157        	on				(a.IO=b.IO) and (a.Naics = b.Naics) and (a.Year=b.Year)
+158        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.IMPORTRATIOS_5YRS created, with 771835 rows and 4 columns.
+
+159        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.35 seconds
+      cpu time            0.53 seconds
+      
+
+160        
+161        /*Step:3 Add CensusPeriodID and CensusYear from the databse and hold 1997 import ratios constant back to 1987*/
+162        libname SQL ODBC DSN=IPSTestDB  schema=sas;
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPSTestDB
+10                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+163        
+164        /*Pull in the YearID map from IPS Database */
+165        data work.Report_YearsCensusPeriod;
+166        	set	sql.Report_YearsCensusPeriod;
+167        	if CensusPeriodID > 10 and CensusPeriodID<13;
+168        run;
+
+NOTE: There were 42 observations read from the data set SQL.Report_YearsCensusPeriod.
+NOTE: The data set WORK.REPORT_YEARSCENSUSPERIOD has 12 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.03 seconds
+      
+
+169        
+170        /*Add CensusPeriodID and CensusYear from the database for interpolation*/
+171        Proc Sql;
+172        	Create table  	work.AddYearNo_CensusPeriod as
+173            Select          Distinct a.IO, a.Naics, a.Year, b.CensusPeriodID, b.CensusYear as YearNo, a.Import_Ratio
+174            from 	     	work.ImportRatios_5yrs a
+175        	left join		work.Report_YearsCensusPeriod b
+176        	on				(a.Year=b.Year)
+177        	order by		a.IO, a.Naics, b.Year;
+NOTE: Table WORK.ADDYEARNO_CENSUSPERIOD created, with 798450 rows and 6 columns.
+
+178        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.67 seconds
+      cpu time            1.17 seconds
+      
+
+179        
+180        /*Extrapolate 1997 import ratio back to 1987 and 2007 import ratio forward through EY*/
+181        Proc Sql;
+182        	Create table  	work.ExtrapolateImportRatios as
+183            Select          Distinct a.IO, a.Naics, a.Year, a.CensusPeriodID, a.YearNo,
+184        					case when a.Year<1997 then b.Import_Ratio
+185        						 when a.Year>2007 then c.Import_Ratio
+186        						 else a.Import_Ratio
+187        					end as Import_Ratio
+11                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+188            from 	     	work.AddYearNo_CensusPeriod a
+189        	left join		work.AddYearNo_CensusPeriod b
+190        	on				(a.IO=b.IO) and (a.Naics=b.Naics) and (b.Year=1997)
+191        	left join		work.AddYearNo_CensusPeriod c
+192        	on				(a.IO=c.IO) and (a.Naics=c.Naics) and (c.Year=2007)
+193        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.EXTRAPOLATEIMPORTRATIOS created, with 798450 rows and 6 columns.
+
+194        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.57 seconds
+      cpu time            0.78 seconds
+      
+
+195        
+196        /*Interpolate import ratio benchmarks*/
+197        Proc sql;
+198        	Create table  	work.ImportRatioDiff as
+199            Select          a.IO, a.Naics, a.CensusPeriodID, (a.Import_Ratio-b.Import_Ratio)/5 as IncrementValue
+200            from 	     	work.ExtrapolateImportRatios a
+201        	inner join		work.ExtrapolateImportRatios b
+202            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.CensusPeriodID=b.CensusPeriodID) and (a.YearNo=6) and
+202      ! (b.YearNo=1)
+203        	order by		a.IO, a.Naics, a.CensusPeriodID;
+NOTE: Table WORK.IMPORTRATIODIFF created, with 53230 rows and 4 columns.
+
+204        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.15 seconds
+      cpu time            0.14 seconds
+      
+
+205        
+206        proc sql;
+207        	Create table	work.ImportRatioWorking as
+208        	Select			a.IO, a.Naics, a.Year, a.CensusPeriodID, a.YearNo, a.Import_Ratio,
+209        					case 	when b.IncrementValue is null then 0
+210        							else b.IncrementValue
+211        					end 	as IncrementValue
+212        	from			work.ExtrapolateImportRatios a
+12                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+213        	left join 		work.ImportRatioDiff b
+214        	on				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.CensusPeriodID=b.CensusPeriodID)
+215        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.IMPORTRATIOWORKING created, with 798450 rows and 7 columns.
+
+216        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.49 seconds
+      cpu time            0.88 seconds
+      
+
+217        
+218        proc sql;
+219        	Create table	work.ImportRatioAnnualRatio as
+220        	Select			a.IO, a.Naics, a.CensusPeriodID, a.Year, a.YearNo,(a.IncrementValue*(a.YearNo-1))+b.Import_Ratio as
+220      ! Import_Ratio
+221        	from			work.ImportRatioWorking a
+222        	inner join		work.ImportRatioWorking b
+223        	on				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.CensusPeriodID=b.CensusPeriodID) and (b.YearNo=1)
+224        	order by 		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.IMPORTRATIOANNUALRATIO created, with 319380 rows and 6 columns.
+
+225        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.34 seconds
+      cpu time            0.39 seconds
+      
+
+226        
+227        /*Create final interpolated and extrapolated import ratio dataset.*/
+228        Proc sql;
+229        	Create table	work.Import_Ratios_Flat as
+230        	Select			Distinct a.IO, a.Naics, a.Year,
+231        					case when a.Import_ratio is null then b.Import_Ratio
+232        						 else a.Import_Ratio
+233        					end as Import_Ratio
+234        	from			work.ExtrapolateImportRatios a
+235        	left join		work.ImportRatioAnnualRatio b
+236        	on				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year=b.Year)
+237        	order by 		a.IO, a.Naics, a.Year;
+13                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.IMPORT_RATIOS_FLAT created, with 771835 rows and 4 columns.
+
+238        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.46 seconds
+      cpu time            0.62 seconds
+      
+
+239        
+240        /*******************************************************************************************************
+241          We now want to calculate combined domestic/import prices. Take the previously calculated import
+242          ratios and match them up with import deflators, where available. If no import deflator is available,
+243          then the import ratio will be zero. If the industry/commodity combination is intrasectoral, then set
+244          the import ratio equal to 1. We set to 1 because we remove all domestic intrasectoral shipments, but
+245          not imported intrasectoral shipments.															
+246          Only do this for materials. And we only do this for the PRO value, not anything else.
+247         ********************************************************************************************************/
+248        
+249        /* Merge the import ratio file with the import deflator and domestic deflator files.
+250           Merge the domestic prices, import prices, and import ratios together. */
+251        Proc Sql;
+252        	Create table	work.Import_Merge as
+253        	Select			a.IO, a.Naics, a.Year, a.Import_Ratio, b.Value as Imp_Defl, c.Value as Dom_Defl
+254        	from 			work.Import_Ratios_Flat a
+255        	left join		work.Import_Deflators_Flat b
+256        	on				(a.IO=b.IO) and (a.Year=b.Year)
+257        	left join		work.IO_Domestic_All c
+258        	on				(a.IO=c.IO) and (a.Year=c.Year)
+259        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.IMPORT_MERGE created, with 771835 rows and 6 columns.
+
+260        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.43 seconds
+      cpu time            0.93 seconds
+      
+
+261        
+262        /*Modify work.Import_Merge
+263        If there's an intrasectoral transaction, set the import ratio to 1, which assumes the domestic component goes away.
+14                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+264        If the Imp_Defl is null, then set the import_ratio to equal zero. This will override intrasectoral cases if there's
+264      ! no import deflator.
+265        If the Imp_Defl is null, then set the Imp_Defl to 100. This number doesn't matter since the import ratio has been set
+265      !  to 0. But we need a value
+266        to prevent any errors from showing up in future aggregations.*/
+267        Proc Sql;
+268        	Create table	work.Import_Merge2 as
+269        	Select			IO, Naics, Year,
+270        					case when substr(IO,1,4)=substr(Naics,1,4) then 1  /* NOTE: FOR GROSS VALUE ADDED REMOVE LINE */
+271        						 when Imp_Defl is null then 0
+272        						 else Import_Ratio
+273        					end as Import_Ratio,
+274        					case when Imp_Defl is null then 100
+275        						 else Imp_Defl
+276        					end as Imp_Defl, Dom_Defl
+277        	from			work.Import_Merge
+278        	order by		IO, Naics, Year;
+NOTE: Table WORK.IMPORT_MERGE2 created, with 771835 rows and 6 columns.
+
+279        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.20 seconds
+      cpu time            0.20 seconds
+      
+
+280        
+281        /*	Calculating average annual share of Import Ratio */
+282        Proc Sql;
+283        	Create table  	work.AverageAnnualShares_ImportRatio as
+284            Select          a.IO, a.Naics, a.Year, (a.Import_Ratio+b.Import_Ratio)/2 as Share_ImportRatio
+285            from 	     	work.Import_Merge2 a
+286        	left join 		work.Import_Merge2 b
+287            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year-1=b.Year)
+288        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.AVERAGEANNUALSHARES_IMPORTRATIO created, with 771835 rows and 4 columns.
+
+289        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.62 seconds
+      cpu time            0.95 seconds
+15                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      
+
+290        
+291        /*	Calculating logarithmic change in import and domestic deflators */
+292        Proc Sql;
+293        	Create table  	work.LogChg_ImpDefl as
+294            Select          a.IO, a.Naics, a.Year, log(a.Imp_Defl)-log(b.Imp_Defl) as LogChg_ImpDefl
+295            from 	     	work.Import_Merge2 a
+296        	left join 		work.Import_Merge2 b
+297            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year-1=b.Year)
+298        	order by		a.IO, a.Naics, a.Year;
+NOTE: Invalid (or missing) arguments to the LOG function have caused the function to return a missing value.
+NOTE: Table WORK.LOGCHG_IMPDEFL created, with 771835 rows and 4 columns.
+
+299        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.63 seconds
+      cpu time            0.95 seconds
+      
+
+300        
+301        proc sql;
+302        	Create table  	work.LogChg_DomDefl as
+303            Select          a.IO, a.Naics, a.Year, log(a.Dom_Defl)-log(b.Dom_Defl) as LogChg_DomDefl
+304            from 	     	work.Import_Merge2 a
+305        	left join 		work.Import_Merge2 b
+306            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year-1=b.Year)
+307        	order by		a.IO, a.Naics, a.Year;
+NOTE: Invalid (or missing) arguments to the LOG function have caused the function to return a missing value.
+NOTE: Table WORK.LOGCHG_DOMDEFL created, with 771835 rows and 4 columns.
+
+308        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.64 seconds
+      cpu time            0.95 seconds
+      
+
+309        
+310        /*Multiply log change in Import by Import ratio, then mulitply log change in domestic price by (1-Import Ratio)*/
+311        Proc Sql;
+16                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+312        	Create table  	work.LogShare_ImpDefl as
+313            Select          a.IO, a.Naics, a.Year, b.Share_ImportRatio*a.LogChg_ImpDefl as LogShare_ImpDefl
+314            from 	     	work.LogChg_ImpDefl a
+315        	left join 		work.AverageAnnualShares_ImportRatio b
+316            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year=b.Year)
+317        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.LOGSHARE_IMPDEFL created, with 771835 rows and 4 columns.
+
+318        
+319        	Create table  	work.LogShare_DomDefl as
+320            Select          a.IO, a.Naics, a.Year, (1-b.Share_ImportRatio) * a.LogChg_DomDefl as LogShare_DomDefl
+321            from 	     	work.LogChg_DomDefl a
+322        	left join 		work.AverageAnnualShares_ImportRatio b
+323            on 				(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year=b.Year)
+324        	order by		a.IO, a.Naics, a.Year;
+NOTE: Table WORK.LOGSHARE_DOMDEFL created, with 771835 rows and 4 columns.
+
+325        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.75 seconds
+      cpu time            0.73 seconds
+      
+
+326        
+327        /*	Calculating exponent of sum of weighted product growth rates | Exp (Sum(LogarithmicChange*AverageAnnualShares))*/
+328        Proc Sql;
+329        	Create table  	work.ExpSum as
+330            Select          a.IO, a.Naics, a.Year, exp(sum(a.LogShare_ImpDefl+b.LogShare_DomDefl)) as Value
+331            from 	     	work.LogShare_ImpDefl a
+332        	inner join		work.LogShare_DomDefl b
+333            on	 			(a.IO=b.IO) and (a.Naics=b.Naics) and (a.Year=b.Year)
+334        	Group by		a.IO, a.Naics, a.Year;
+NOTE: Invalid (or missing) arguments to the EXP function have caused the function to return a missing value.
+NOTE: Table WORK.EXPSUM created, with 771835 rows and 4 columns.
+
+335        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.49 seconds
+      cpu time            0.48 seconds
+      
+17                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+
+336        
+337        %macro chain;
+338        Proc sql;
+339        Create table 	work.IO_Combined_M as
+340        Select 			a.NAICS, a.IO, a.Year,
+341        				case when a.year=1987 then 100
+342        				%do i = 1988 %to &lastyr.;
+343        					when a.Year=&i then
+344        					%do b = &i %to 1988 %by -1;
+345        						_&b..Value*
+346        					%end;
+347        					100
+348        				%end;
+349        				end as Defl
+350        from 			work.ExpSum a
+351        				%do c = 1988 %to &lastyr.;
+352        					left join work.ExpSum _&c on (a.IO=_&c..IO) and (a.Naics=_&c..Naics) and _&c..year=&c
+353        				%end;
+354        order by 		NAICS, IO, Year;
+355        quit;
+356        %mend chain;
+357        %chain;
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.IO_COMBINED_M created, with 771835 rows and 4 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           3.42 seconds
+      cpu time            3.65 seconds
+      
+
+358        
+359        /*#####################################################################################################
+360          #IO_Combined_M has the combined import/domestic prices for each industry/commodity combination for  #
+361          #materials. We now take the IO table, find the commodity share for each 4-digit consuming industry. #
+362          #Note on intrasectorals: If an intrasectoral shipment, we want to remove the domestic portion of the#
+363          #consuming industry.																				  #
+364          #####################################################################################################*/
+365        
+18                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+366        /*We will interpolate the IO table for all variables. This will be used to find averages for both
+367        materials and services.*/
+368        Proc Sort data=work.IO_ALL2 out=work.IO_All3;
+369        	by Naics IO Year Classification;
+370        run;
+
+NOTE: There were 79845 observations read from the data set WORK.IO_ALL2.
+NOTE: The data set WORK.IO_ALL3 has 79845 observations and 9 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.03 seconds
+      
+
+371        
+372        Proc Transpose data=work.IO_All3 out=work.IO_All_Flat1 (rename=(_NAME_= Variable COL1=Value) drop=_LABEL_);
+373        	by Naics IO Year Classification;
+374        run;
+
+NOTE: There were 79845 observations read from the data set WORK.IO_ALL3.
+NOTE: The data set WORK.IO_ALL_FLAT1 has 399225 observations and 6 variables.
+NOTE: PROCEDURE TRANSPOSE used (Total process time):
+      real time           0.11 seconds
+      cpu time            0.11 seconds
+      
+
+375        
+376        Proc sql;
+377        	Create table	work.IO_All_Flat as
+378        	Select			Naics, IO, Year, Classification, Variable, Value
+379        	from			work.IO_All_Flat1
+380        	order by		NAICS, IO, Year;
+NOTE: Table WORK.IO_ALL_FLAT created, with 399225 rows and 6 columns.
+
+381        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.09 seconds
+      cpu time            0.20 seconds
+      
+
+381      !      		
+19                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+382        
+383        /*We can split of materials and services now, since they are calculated slightly differently
+384        from this point forward. NOTE: We only use PUR values for services*/
+385        Proc Sql;
+386        	Create table	work.IO_All_Flat_Mat as
+387        	Select			substr(NAICS,1,4) as Naics_4, Naics, IO, Variable, Classification, Year, Value
+388        	from 			work.IO_All_Flat
+389        	where			Variable in ('PRO', 'RET', 'TC', 'WHS') and Classification = 'M'
+390        	order by		Naics, IO, Year;
+NOTE: Table WORK.IO_ALL_FLAT_MAT created, with 162684 rows and 7 columns.
+
+391        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.06 seconds
+      cpu time            0.06 seconds
+      
+
+392        
+393        proc sql;
+394        	Create table	work.IO_All_Flat_Srv as
+395        	Select			substr(NAICS,1,4) as Naics_4, Naics, IO, Variable, Classification, Year, Value
+396        	from 			work.IO_All_Flat
+397        	where			Variable = 'PUR' and Classification = 'S'
+398        	order by		Naics, IO, Year;
+NOTE: Table WORK.IO_ALL_FLAT_SRV created, with 39174 rows and 7 columns.
+
+399        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+400        
+401        /*Merge IO_All_Flat_Mat and Import_Ratios_flat.*/
+402        Proc Sql;
+403        	Create table	work.IO_All_Flat_Mat2 as
+404        	Select			a.Naics_4, a.Naics, a.IO, a.Year, a.Variable, a.Classification, a.Value, b.Import_Ratio
+405        	from 			work.IO_All_Flat_Mat a
+406        	left join		work.Import_Ratios_Flat b
+407        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Year=b.Year)
+20                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+408        	order by		a.Naics, a.IO, a.Year;
+NOTE: Table WORK.IO_ALL_FLAT_MAT2 created, with 162684 rows and 8 columns.
+
+409        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.22 seconds
+      cpu time            0.46 seconds
+      
+
+410        
+411        /* For SECTORAL price of materials, if the variable is PRO and it's an intrasectoral shipment and there's a
+412           corresponding import deflator, then we remove the domestic share */
+413        proc sql;
+414            Create table	work.IO_All_Flat_Mat3 as
+415        	Select			a.NAICS_4, a.Naics, a.IO, a.Year, a.Variable, a.Classification, a.Value, a.Import_Ratio, b.Value as
+415      ! Imp_Defl,
+416        					case when a.NAICS_4=substr(a.IO,1,4) and Variable="PRO" then 'True'	/*Create 'intra' to make logical expressions
+416      !  easier*/	
+417        						 else 'False'
+418        					end as Intra,
+419        					case when b.Value is null then 'False'	/*Create variable to test if there's an import deflator*/
+420        						 else 'True'
+421        					end as HasImp
+422        	from 			work.IO_All_Flat_Mat2 a
+423        	left join		work.Import_Deflators_Flat b
+424        	on				(a.IO=b.IO) and (a.Year=b.Year)
+425        	order by		a.Naics, a.IO, a.Year;
+NOTE: Table WORK.IO_ALL_FLAT_MAT3 created, with 162684 rows and 11 columns.
+
+426        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.13 seconds
+      cpu time            0.20 seconds
+      
+
+427        
+428        proc sql;
+429        	Create table	work.IO_All_Flat_Mat4 as
+430        	Select			NAICS_4, Naics, IO, Year, Variable, Classification,
+431        					case when Intra = 'True' and HasImp = 'True' then Value*Import_Ratio	
+21                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+432        						 when Intra = 'True' and HasImp = 'False' then 0
+433        						 else Value
+434        					end as Value, Import_Ratio, Imp_Defl
+435        	from 			work.IO_All_Flat_Mat3
+436        	order by		Naics, IO, Year;
+NOTE: Table WORK.IO_ALL_FLAT_MAT4 created, with 162684 rows and 9 columns.
+
+437        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.03 seconds
+      
+
+438        
+439        proc sort data=work.IO_ALL_Flat_Mat4 out=work.IO_ALL_Flat_Mat4;
+440        	by Naics_4 Naics IO Year;
+441        run;
+
+NOTE: There were 162684 observations read from the data set WORK.IO_ALL_FLAT_MAT4.
+NOTE: The data set WORK.IO_ALL_FLAT_MAT4 has 162684 observations and 9 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.05 seconds
+      cpu time            0.09 seconds
+      
+
+442        
+443        /*Calculate shares*/
+444        Proc Sql;
+445        	Create table	work.IO_All_Flat_Mat5 as
+446        	Select			Naics_4, Naics, IO, Year, Variable, Classification, Value, Import_Ratio,
+447        					sum(Value) as Total, value/sum(value) as Percent
+448        	from 			work.IO_All_Flat_Mat4
+449        	group by		Naics_4, Year
+450        	order by		Naics_4, Naics, IO, Year;
+NOTE: The query requires remerging summary statistics back with the original data.
+NOTE: Table WORK.IO_ALL_FLAT_MAT5 created, with 162684 rows and 10 columns.
+
+451        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.10 seconds
+22                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.18 seconds
+      
+
+452        
+453        /*Interpolate the shares. */
+454        /*Step:1 Create unique Naics - IO combinations with years from 1987-End Year (EY)*/
+455        Proc Sql;
+456        	Create table  	work.YearStructure2_87EY as
+457            Select          Distinct a.Naics, substr(Naics,1,4) as Naics_4, a.IO, b.Year
+458            from 	     	work.IO_All_Flat_Mat5 a
+459        	inner join		work.IO_Domestic_All b
+460        	on				(a.IO=b.IO);
+NOTE: Table WORK.YEARSTRUCTURE2_87EY created, with 393153 rows and 4 columns.
+
+461        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.33 seconds
+      cpu time            2.35 seconds
+      
+
+462        
+463        %macro interpolate_shares(dsn,var);
+464        /*Step:2 Join Shares (every 5 years) to year structure*/
+465        Proc Sql;
+466        	Create table  	work.&dsn.Shares_5yrs as
+467            Select          a.Naics_4, a.Naics, a.IO, a.Year, b.Variable, b.Percent
+468            from 	     	work.YearStructure2_87EY a
+469        	left join		work.IO_All_Flat_Mat5 b
+470        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Year=b.Year)
+471        	where			b.Variable is null or b.Variable = &var.
+472        	order by		a.Naics_4, a.Naics, a.IO, a.Year;
+473        quit;
+474        
+475        /*Step:3 Add CensusPeriodID and CensusYear from the databse and hold 1997 shares constant back to 1987*/
+476        libname SQL ODBC DSN=IPSTestDB  schema=sas;
+477        
+478        /*Pull in the YearID map from IPS Database */
+479        data work.Report_YearsCensusPeriod;
+480        	set	sql.Report_YearsCensusPeriod;
+481        	if CensusPeriodID > 10 and CensusPeriodID<13;
+23                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+482        run;
+483        
+484        /*Add CensusPeriodID and CensusYear from the database for interpolation*/
+485        Proc Sql;
+486        	Create table  	work.AddYearNo_CensusPeriod_&dsn. as
+487            Select          Distinct a.Naics_4, a.Naics, a.IO, a.Year, b.CensusPeriodID, b.CensusYear as YearNo, a.Variable,
+487      ! a.Percent
+488            from 	     	work.&dsn.shares_5yrs a
+489        	left join		work.Report_YearsCensusPeriod b
+490        	on				(a.Year=b.Year)
+491        	order by		a.Naics_4, a.Naics, a.IO, b.Year;
+492        quit;
+493        
+494        /*Extrapolate 1997 share back to 1987 and 2007 share forward through EY*/
+495        Proc Sql;
+496        	Create table  	work.ExtrapolateShares&dsn. as
+497            Select          Distinct a.Naics_4, a.Naics, a.IO, a.Year, a.CensusPeriodID, a.YearNo, a.Variable,
+498        					case when a.Year<1997 then b.Percent
+499        						 when a.Year>2007 then c.Percent
+500        						 else a.Percent
+501        					end as Percent
+502            from 	     	work.AddYearNo_CensusPeriod_&dsn. a
+503        	left join		work.AddYearNo_CensusPeriod_&dsn. b
+504        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (b.Year=1997)
+505        	left join		work.AddYearNo_CensusPeriod_&dsn. c
+506        	on				(a.Naics=c.Naics) and (a.IO=C.IO) and (c.Year=2007)
+507        	order by		a.Naics_4, a.Naics, a.IO, a.Year;
+508        quit;
+509        
+510        /*Interpolate benchmark shares*/
+511        Proc sql;
+512        	Create table  	work.&dsn.ShareDiff as
+513            Select          a.Naics_4, a.Naics, a.IO, a.Variable, a.CensusPeriodID, (a.Percent-b.Percent)/5 as IncrementValue
+514            from 	     	work.ExtrapolateShares&dsn. a
+515        	inner join		work.ExtrapolateShares&dsn. b
+516            on 				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.CensusPeriodID=b.CensusPeriodID) and (a.YearNo=6) and
+516      ! (b.YearNo=1)
+517        	order by		a.Naics_4, a.Naics, a.IO, a.CensusPeriodID;
+518        
+519        	Create table	work.&dsn.ShareWorking as
+24                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+520        	Select			a.Naics_4, a.Naics, a.IO, a.Year, a.Variable, a.CensusPeriodID, a.YearNo, a.Percent,
+521        					case 	when b.IncrementValue is null then 0
+522        							else b.IncrementValue
+523        					end 	as IncrementValue
+524        	from			work.ExtrapolateShares&dsn. a
+525        	left join 		work.&dsn.ShareDiff b
+526        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.CensusPeriodID=b.CensusPeriodID)
+527        	order by		a.Naics_4, a.Naics, a.IO, a.Year;
+528        
+529        	Create table	work.&dsn.ShareAnnualRatio as
+530        	Select			a.Naics_4, a.Naics, a.IO, a.Variable, a.CensusPeriodID, a.Year,
+530      ! a.YearNo,(a.IncrementValue*(a.YearNo-1))+b.Percent as Percent
+531        	from			work.&dsn.ShareWorking a
+532        	inner join		work.&dsn.ShareWorking b
+533        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.CensusPeriodID=b.CensusPeriodID) and (b.YearNo=1)
+534        	order by 		a.Naics_4, a.Naics, a.IO, a.Year;
+535        quit;
+536        
+537        /*Create final interpolated and extrapolated shares dataset.*/
+538        Proc sql;
+539        	Create table	work.&dsn.Share_Flat as
+540        	Select			Distinct a.Naics_4, a.Naics, a.IO, &var. as Variable, a.Year,
+541        					case when a.Percent is null then b.Percent
+542        						 else a.Percent
+543        					end as Percent
+544        	from			work.ExtrapolateShares&dsn. a
+545        	left join		work.&dsn.ShareAnnualRatio b
+546        	on				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Year=b.Year)
+547        	order by 		a.Naics_4, a.Naics, a.IO, a.Year;
+548        quit;
+549        %mend interpolate_shares;
+550        
+551        %interpolate_shares(PRO,'PRO');
+NOTE: Table WORK.PROSHARES_5YRS created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.28 seconds
+      cpu time            0.49 seconds
+      
+
+25                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPSTestDB
+
+NOTE: There were 42 observations read from the data set SQL.Report_YearsCensusPeriod.
+NOTE: The data set WORK.REPORT_YEARSCENSUSPERIOD has 12 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.00 seconds
+      
+
+NOTE: Table WORK.ADDYEARNO_CENSUSPERIOD_PRO created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.37 seconds
+      cpu time            0.62 seconds
+      
+
+NOTE: Table WORK.EXTRAPOLATESHARESPRO created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.44 seconds
+      cpu time            0.68 seconds
+      
+
+NOTE: Table WORK.PROSHAREDIFF created, with 27114 rows and 6 columns.
+
+NOTE: Table WORK.PROSHAREWORKING created, with 406710 rows and 9 columns.
+
+NOTE: Table WORK.PROSHAREANNUALRATIO created, with 162684 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.55 seconds
+      cpu time            0.87 seconds
+      
+
+NOTE: Table WORK.PROSHARE_FLAT created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.37 seconds
+26                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      cpu time            0.57 seconds
+      
+
+552        %interpolate_shares(RET,'RET');
+NOTE: Table WORK.RETSHARES_5YRS created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.25 seconds
+      cpu time            0.56 seconds
+      
+
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPSTestDB
+
+NOTE: There were 42 observations read from the data set SQL.Report_YearsCensusPeriod.
+NOTE: The data set WORK.REPORT_YEARSCENSUSPERIOD has 12 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.14 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Table WORK.ADDYEARNO_CENSUSPERIOD_RET created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.40 seconds
+      cpu time            0.64 seconds
+      
+
+NOTE: Table WORK.EXTRAPOLATESHARESRET created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.43 seconds
+      cpu time            0.65 seconds
+      
+
+NOTE: Table WORK.RETSHAREDIFF created, with 27114 rows and 6 columns.
+
+NOTE: Table WORK.RETSHAREWORKING created, with 406710 rows and 9 columns.
+
+27                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.RETSHAREANNUALRATIO created, with 162684 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.54 seconds
+      cpu time            0.87 seconds
+      
+
+NOTE: Table WORK.RETSHARE_FLAT created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.39 seconds
+      cpu time            0.68 seconds
+      
+
+553        %interpolate_shares(TC,'TC');
+NOTE: Table WORK.TCSHARES_5YRS created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.26 seconds
+      cpu time            0.46 seconds
+      
+
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPSTestDB
+
+NOTE: There were 42 observations read from the data set SQL.Report_YearsCensusPeriod.
+NOTE: The data set WORK.REPORT_YEARSCENSUSPERIOD has 12 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.03 seconds
+      
+
+NOTE: Table WORK.ADDYEARNO_CENSUSPERIOD_TC created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.38 seconds
+      cpu time            0.65 seconds
+      
+
+28                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+NOTE: Table WORK.EXTRAPOLATESHARESTC created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.44 seconds
+      cpu time            0.68 seconds
+      
+
+NOTE: Table WORK.TCSHAREDIFF created, with 27114 rows and 6 columns.
+
+NOTE: Table WORK.TCSHAREWORKING created, with 406710 rows and 9 columns.
+
+NOTE: Table WORK.TCSHAREANNUALRATIO created, with 162684 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.58 seconds
+      cpu time            0.79 seconds
+      
+
+NOTE: Table WORK.TCSHARE_FLAT created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.38 seconds
+      cpu time            0.59 seconds
+      
+
+554        %interpolate_shares(WHS,'WHS');
+NOTE: Table WORK.WHSSHARES_5YRS created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.27 seconds
+      cpu time            0.48 seconds
+      
+
+NOTE: Libref SQL was successfully assigned as follows: 
+      Engine:        ODBC 
+      Physical Name: IPSTestDB
+
+NOTE: There were 42 observations read from the data set SQL.Report_YearsCensusPeriod.
+NOTE: The data set WORK.REPORT_YEARSCENSUSPERIOD has 12 observations and 11 variables.
+NOTE: DATA statement used (Total process time):
+29                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+      real time           0.09 seconds
+      cpu time            0.01 seconds
+      
+
+NOTE: Table WORK.ADDYEARNO_CENSUSPERIOD_WHS created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.37 seconds
+      cpu time            0.63 seconds
+      
+
+NOTE: Table WORK.EXTRAPOLATESHARESWHS created, with 406710 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.43 seconds
+      cpu time            0.65 seconds
+      
+
+NOTE: Table WORK.WHSSHAREDIFF created, with 27114 rows and 6 columns.
+
+NOTE: Table WORK.WHSSHAREWORKING created, with 406710 rows and 9 columns.
+
+NOTE: Table WORK.WHSSHAREANNUALRATIO created, with 162684 rows and 8 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.57 seconds
+      cpu time            0.76 seconds
+      
+
+NOTE: Table WORK.WHSSHARE_FLAT created, with 393153 rows and 6 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.36 seconds
+      cpu time            0.59 seconds
+      
+
+555        
+556        /* Merge Shares into 1 flatfile. */
+557        Proc Sql;
+558        	Create table 	work.Shares_Flat as
+30                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+559        	Select 			Distinct Naics_4, Naics, IO, Variable, Year, Percent	from work.PROShare_Flat union all
+560        	Select 			Distinct Naics_4, Naics, IO, Variable, Year, Percent 	from work.WHSShare_Flat union all
+561        	Select 			Distinct Naics_4, Naics, IO, Variable, Year, Percent	from work.TCShare_Flat union all
+562        	Select 			Distinct Naics_4, Naics, IO, Variable, Year, Percent 	from work.RETShare_Flat
+563        	order by		Naics_4, Naics, IO, Variable, Year;
+NOTE: Table WORK.SHARES_FLAT created, with 1572612 rows and 6 columns.
+
+564        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.62 seconds
+      cpu time            1.12 seconds
+      
+
+565        
+566        /*	Calculating average annual share of IO_Naics_Revenue */
+567        Proc Sql;
+568        	Create table  	work.Shares_AverageAnnualShares as
+569            Select          a.Naics_4, a.Naics, a.IO, a.Variable, a.Year, (a.Percent+b.Percent)/2 as Value
+570            from 	     	work.Shares_Flat a
+571        	left join 		work.Shares_Flat b
+572            on 				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Variable=b.Variable) and (a.Year-1=b.Year)
+573        	order by		Naics_4, Naics, IO, Variable, Year;
+NOTE: Table WORK.SHARES_AVERAGEANNUALSHARES created, with 1572612 rows and 6 columns.
+
+574        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           1.63 seconds
+      cpu time            2.83 seconds
+      
+
+575        
+576        /*We need to associate the margin commodities with the appropriate deflator*/
+577        proc sql;
+578        	Create table  	work.Shares_Flat2 as
+579            Select          Naics_4, Naics, IO, Variable, Year, Value,
+580        					case when Variable = 'PRO' then IO
+581        					     when Variable = 'RET' then '4B000Z'
+582        				   	     when Variable = 'WHS' then '42000Z'
+583        						 else '48B00Z'
+584        					end as Defl_Code
+31                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+585            from 	     	work.Shares_AverageAnnualShares
+586        	order by		Naics_4, Naics, IO, Variable, Year;
+NOTE: Table WORK.SHARES_FLAT2 created, with 1572612 rows and 7 columns.
+
+587        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.26 seconds
+      cpu time            0.26 seconds
+      
+
+588        
+589        /*Pull out the z deflators from the domestic price table*/
+590        Proc Sql;
+591        	Create table  	work.Defl_Z as
+592            Select        	IO, Year, Value
+593            from 	     	work.IO_Domestic_All
+594        	where			IO in ("48B00Z", "42000Z", "4B000Z");
+NOTE: Table WORK.DEFL_Z created, with 87 rows and 3 columns.
+
+595        
+596        	Create table  	work.Shares_Flat_Z as
+597            Select          a.Naics_4, a.Naics, a.IO, a.Variable, a.Year, a.Defl_Code, a.Value as Share_Average, b.Value as
+597      ! Defl
+598            from 	     	work.Shares_Flat2 a
+599        	inner join 		work.Defl_Z b
+600            on 				(a.Defl_Code=b.IO) and (a.Year=b.Year)
+601        	order by		a.Naics_4, a.Naics, a.IO, a.Variable, a.Year;
+NOTE: Table WORK.SHARES_FLAT_Z created, with 1179459 rows and 8 columns.
+
+602        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.51 seconds
+      cpu time            0.90 seconds
+      
+
+603        
+604        /*Now merge the non-z shares with the combined import/domestic deflators.*/
+605        Proc sql;
+606        	Create table  	work.Shares_Flat_Pro as
+607            Select          a.Naics_4, a.Naics, a.IO, a.Variable, a.Year, a.Defl_Code, a.Value as Share_Average, b.Defl
+32                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+608            from 	     	work.Shares_Flat2 a
+609        	inner join 		work.IO_Combined_M b
+610            on 				(a.Naics=b.Naics) and (a.Defl_Code=b.IO) and (a.Year=b.Year)
+611        	order by		a.Naics_4, a.Naics, a.IO, a.Variable, a.Year;
+NOTE: Table WORK.SHARES_FLAT_PRO created, with 393153 rows and 8 columns.
+
+612        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.85 seconds
+      cpu time            0.88 seconds
+      
+
+613        
+614        /*Combine Shares_Flat_Pro and Shares_Flat_Z*/
+615        Proc Sql;
+616        	Create table 	work.MatPrice as
+617        	Select 			Naics_4, Naics, IO, Variable, Year, Share_Average, Defl		from work.Shares_Flat_Z  union all
+618        	Select 			Naics_4, Naics, IO, Variable, Year, Share_Average, Defl		from work.Shares_Flat_Pro
+619        	order by		Naics_4, Naics, IO, Variable, Year;
+NOTE: Table WORK.MATPRICE created, with 1572612 rows and 7 columns.
+
+620        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.51 seconds
+      cpu time            0.93 seconds
+      
+
+621        
+622        /*	Calculating logarithmic change in deflators and multiply log change by average share */
+623        Proc Sql;
+624        	Create table  	work.LogChg_MatPriceDefl as
+625            Select          a.Naics_4, a.Naics, a.IO, a.Year, a.Variable, a.Share_Average, log(a.Defl)-log(b.Defl) as
+625      ! LogChg_Defl
+626            from 	     	work.MatPrice a
+627        	left join 		work.MatPrice b
+628            on 				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Variable=b.Variable) and (a.Year-1=b.Year)
+629        	order by		a.Naics_4, a.Naics, a.IO, a.Variable, a.Year;
+NOTE: Invalid (or missing) arguments to the LOG function have caused the function to return a missing value.
+NOTE: Table WORK.LOGCHG_MATPRICEDEFL created, with 1572612 rows and 7 columns.
+
+33                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+630        
+631        	Create table  	work.LogShare_MatPriceDefl as
+632            Select          a.Naics_4, a.Naics, a.IO, a.Year, a.Variable, a.Share_Average, a.LogChg_Defl, a.Share_Average *
+632      ! b.LogChg_Defl as LogShare_Defl
+633            from 	     	work.LogChg_MatPriceDefl a
+634        	left join 		work.LogChg_MatPriceDefl b
+635            on 				(a.Naics=b.Naics) and (a.IO=b.IO) and (a.Variable=b.Variable) and (a.Year=b.Year)
+636        	order by		a.Naics_4, a.Naics, a.IO, a.Variable, a.Year;
+NOTE: Table WORK.LOGSHARE_MATPRICEDEFL created, with 1572612 rows and 8 columns.
+
+637        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           3.90 seconds
+      cpu time            6.06 seconds
+      
+
+638        
+639        /*	Calculating exponent of sum of weighted product growth rates | Exp (Sum(LogarithmicChange*AverageAnnualShares))*/
+640        Proc Sql;
+641        	Create table  	work.MatPrice3 as
+642            Select          a.Naics_4, a.Year, exp(sum(a.LogShare_Defl)) as Value
+643            from 	     	work.LogShare_MatPriceDefl a
+644        	inner join		work.LogShare_MatPriceDefl b
+645            on	 			(a.Naics_4=b.Naics_4) and (a.Naics=b.Naics) and (a.IO=b.IO) and (a.Variable=b.Variable) and
+645      ! (a.Year=b.Year)
+646        	Group by		a.Naics_4, a.Year;
+NOTE: Invalid (or missing) arguments to the EXP function have caused the function to return a missing value.
+NOTE: Table WORK.MATPRICE3 created, with 2494 rows and 3 columns.
+
+647        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.92 seconds
+      cpu time            1.31 seconds
+      
+
+648        
+649        %macro chain2;
+650        Proc sql;
+651        Create table 	work.price_mat as
+652        Select 			a.Naics_4 as NAICS, a.Year,
+34                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+653        				case when a.year=1987 then 100
+654        				%do i = 1988 %to &lastyr.;
+655        					when a.Year=&i then
+656        					%do b = &i %to 1988 %by -1;
+657        						_&b..Value*
+658        					%end;
+659        					100
+660        				%end;
+661        				end as Price_Mat
+662        from 			work.MatPrice3 a
+663        				%do c = 1988 %to &lastyr.;
+664        					left join work.MatPrice3 _&c on (a.Naics_4=_&c..Naics_4) and _&c..year=&c
+665        				%end;
+666        order by 		NAICS, Year;
+667        quit;
+668        %mend chain2;
+669        %chain2;
+NOTE: A CASE expression has no ELSE clause. Cases not accounted for by the WHEN clauses will result in a missing value for the 
+      CASE expression.
+NOTE: Table WORK.PRICE_MAT created, with 2494 rows and 3 columns.
+
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.28 seconds
+      cpu time            0.28 seconds
+      
+
+670        
+671        /* Export to IP SAS library */
+672        data IP.price_mat;
+673        	set work.price_mat;
+674        run;
+
+NOTE: There were 2494 observations read from the data set WORK.PRICE_MAT.
+NOTE: The data set IP.PRICE_MAT has 2494 observations and 3 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+      cpu time            0.00 seconds
+      
+
+675        
+35                                                       The SAS System                              13:44 Friday, June 23, 2017
+
+676        /* Export to Excel for analysis */
+677        proc export data=work.price_mat
+678        			outfile="Q:\MFP\Manufacturing\IP\IP Output\Price_of_Materials.xlsx"
+679        			dbms=xlsx replace;
+680        			sheet="Price_Mat";
+681        run;
+
+NOTE: The export data set has 2494 observations and 3 variables.
+NOTE: "Q:\MFP\Manufacturing\IP\IP Output\Price_of_Materials.xlsx" file was successfully created.
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.45 seconds
+      cpu time            0.03 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           42.40 seconds
+      cpu time            55.41 seconds
+      

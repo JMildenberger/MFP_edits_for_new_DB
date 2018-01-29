@@ -1,0 +1,2698 @@
+1                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to BUREAU OF LABOR STATISTICS, Site 70108914.
+NOTE: This session is executing on the X64_7PRO  platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+      SAS/ETS 14.1
+      SAS/OR 14.1
+      SAS/IML 14.1
+
+NOTE: Additional host information:
+
+ X64_7PRO WIN 6.1.7601 Service Pack 1 Workstation
+
+NOTE: SAS initialization used:
+      real time           1.15 seconds
+      cpu time            0.77 seconds
+      
+1          libname capital 'Q:\MFP\SAS Libraries\Manufacturing\Capital\capital';
+NOTE: Libref CAPITAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\capital
+2          libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
+NOTE: Libref COMP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\comp
+3          libname deflator 'Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator';
+NOTE: Libref DEFLATOR was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\deflator
+4          libname sptools 'Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools';
+NOTE: Libref SPTOOLS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\sptools
+5          /*libname lives 'Q:\MFP\SAS Libraries\Manufacturing\Capital\lives';*/
+6          libname ras 'Q:\MFP\SAS Libraries\Manufacturing\Capital\ras';
+2                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Libref RAS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\ras
+7          libname beadfnew 'Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew';
+NOTE: Libref BEADFNEW was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\beadfnew
+8          libname invest 'Q:\MFP\SAS Libraries\Manufacturing\Capital\invest';
+NOTE: Libref INVEST was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\invest
+9          libname rental 'Q:\MFP\SAS Libraries\Manufacturing\Capital\rental';
+NOTE: Libref RENTAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\rental
+10         libname kdetails 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails';
+NOTE: Libref KDETAILS was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kdetails
+11         libname kstock4d 'Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d';
+NOTE: Libref KSTOCK4D was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\kstock4d
+12         libname stock 'Q:\MFP\SAS Libraries\Manufacturing\Capital\stock';
+NOTE: Libref STOCK was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\stock
+13         libname final 'Q:\MFP\SAS Libraries\Manufacturing\Capital\final';
+NOTE: Libref FINAL was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: Q:\MFP\SAS Libraries\Manufacturing\Capital\final
+14         
+15         
+16         
+17         proc datasets library=capital kill noprint;
+NOTE: Deleting CAPITAL.ACES_2008_EQUIP (memtype=DATA).
+NOTE: Deleting CAPITAL.ACES_2008_EQUIP_ORIGINAL (memtype=DATA).
+NOTE: Deleting CAPITAL.ACES_2008_STRUCTURES (memtype=DATA).
+NOTE: Deleting CAPITAL.ACES_2012_EQUIP (memtype=DATA).
+NOTE: Deleting CAPITAL.ACES_2012_EQUIP_ORIGINAL (memtype=DATA).
+3                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.ACES_2012_STRUCTURES (memtype=DATA).
+NOTE: Deleting CAPITAL.ALLYEARS (memtype=DATA).
+NOTE: Deleting CAPITAL.BEA_INVESTMENT_ASSET_TOTALS (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3111 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3112 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3113 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3114 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3115 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3116 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3117 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3118 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3119 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3121 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3122 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3131 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3132 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3133 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3141 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3149 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3151 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3152 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3159 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3161 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3162 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3169 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3211 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3212 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3219 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3221 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3222 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3231 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3241 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3251 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3252 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3253 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3254 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3255 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3256 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3259 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3261 (memtype=DATA).
+4                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.CAPEXN3262 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3271 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3272 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3273 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3274 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3279 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3311 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3312 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3313 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3314 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3315 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3321 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3322 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3323 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3324 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3325 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3326 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3327 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3328 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3329 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3331 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3332 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3333 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3334 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3335 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3336 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3339 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3341 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3342 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3343 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3344 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3345 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3346 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3351 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3352 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3353 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3359 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3361 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3362 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3363 (memtype=DATA).
+5                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.CAPEXN3364 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3365 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3366 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3369 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3371 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3372 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3379 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3391 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXN3399 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3111 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3112 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3113 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3114 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3115 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3116 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3117 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3118 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3119 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3121 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3122 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3131 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3132 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3133 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3141 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3149 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3151 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3152 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3159 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3161 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3162 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3169 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3211 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3212 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3219 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3221 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3222 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3231 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3241 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3251 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3252 (memtype=DATA).
+6                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.CAPEXNSTR3253 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3254 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3255 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3256 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3259 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3261 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3262 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3271 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3272 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3273 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3274 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3279 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3311 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3312 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3313 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3314 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3315 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3321 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3322 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3323 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3324 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3325 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3326 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3327 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3328 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3329 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3331 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3332 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3333 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3334 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3335 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3336 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3339 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3341 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3342 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3343 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3344 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3345 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3346 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3351 (memtype=DATA).
+7                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.CAPEXNSTR3352 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3353 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3359 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3361 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3362 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3363 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3364 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3365 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3366 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3369 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3371 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3372 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3379 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3391 (memtype=DATA).
+NOTE: Deleting CAPITAL.CAPEXNSTR3399 (memtype=DATA).
+NOTE: Deleting CAPITAL.COMMODITY_FLOW_TABLE (memtype=DATA).
+NOTE: Deleting CAPITAL.ENDYEAR (memtype=DATA).
+NOTE: Deleting CAPITAL.EQUIPIMAT (memtype=DATA).
+NOTE: Deleting CAPITAL.EQUIPMENT (memtype=DATA).
+NOTE: Deleting CAPITAL.IA1 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA10 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA11 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA12 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA13 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA14 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA15 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA16 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA17 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA18 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA19 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA2 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA20 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA21 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA22 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA23 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA24 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA25 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA26 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA27 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA28 (memtype=DATA).
+8                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.IA29 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA3 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA30 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA32 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA33 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA34 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA35 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA36 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA37 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA38 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA39 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA4 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA40 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA41 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA42 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA43 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA44 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA45 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA46 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA47 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA49 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA5 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA50 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA51 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA52 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA53 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA54 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA55 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA57 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA58 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA59 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA6 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA60 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA61 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA62 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA63 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA7 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA83 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA84 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA86 (memtype=DATA).
+9                                                        The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.IA87 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA88 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA89 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA9 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA90 (memtype=DATA).
+NOTE: Deleting CAPITAL.IA95 (memtype=DATA).
+NOTE: Deleting CAPITAL.INDYS (memtype=DATA).
+NOTE: Deleting CAPITAL.NAICSCAPEXP (memtype=DATA).
+NOTE: Deleting CAPITAL.NAICSPRE1958STRUCTURES (memtype=DATA).
+NOTE: Deleting CAPITAL.NAICSYEARS (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3111 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3112 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3113 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3114 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3115 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3116 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3117 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3118 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3119 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3121 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3122 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3131 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3132 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3133 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3141 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3149 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3151 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3152 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3159 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3161 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3162 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3169 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3211 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3212 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3219 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3221 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3222 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3231 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3241 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3251 (memtype=DATA).
+10                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.NEWCAPEX3252 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3253 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3254 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3255 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3256 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3259 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3261 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3262 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3271 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3272 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3273 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3274 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3279 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3311 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3312 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3313 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3314 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3315 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3321 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3322 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3323 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3324 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3325 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3326 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3327 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3328 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3329 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3331 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3332 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3333 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3334 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3335 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3336 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3339 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3341 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3342 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3343 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3344 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3345 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3346 (memtype=DATA).
+11                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.NEWCAPEX3351 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3352 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3353 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3359 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3361 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3362 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3363 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3364 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3365 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3366 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3369 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3371 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3372 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3379 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3391 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEX3399 (memtype=DATA).
+NOTE: Deleting CAPITAL.NEWCAPEXP (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3111 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3112 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3113 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3114 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3115 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3116 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3117 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3118 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3119 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3121 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3122 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3131 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3132 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3133 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3141 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3149 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3151 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3152 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3159 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3161 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3162 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3169 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3211 (memtype=DATA).
+12                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3212 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3219 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3221 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3222 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3231 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3241 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3251 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3252 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3253 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3254 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3255 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3256 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3259 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3261 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3262 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3271 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3272 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3273 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3274 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3279 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3311 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3312 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3313 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3314 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3315 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3321 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3322 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3323 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3324 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3325 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3326 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3327 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3328 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3329 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3331 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3332 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3333 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3334 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3335 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3336 (memtype=DATA).
+13                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3339 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3341 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3342 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3343 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3344 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3345 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3346 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3351 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3352 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3353 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3359 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3361 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3362 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3363 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3364 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3365 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3366 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3369 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3371 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3372 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3379 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3391 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_3399 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3111 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3112 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3113 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3114 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3115 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3116 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3117 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3118 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3119 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3121 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3122 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3131 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3132 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3133 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3141 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3149 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3151 (memtype=DATA).
+14                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3152 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3159 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3161 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3162 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3169 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3211 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3212 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3219 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3221 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3222 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3231 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3241 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3251 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3252 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3253 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3254 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3255 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3256 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3259 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3261 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3262 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3271 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3272 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3273 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3274 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3279 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3311 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3312 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3313 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3314 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3315 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3321 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3322 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3323 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3324 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3325 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3326 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3327 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3328 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3329 (memtype=DATA).
+15                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3331 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3332 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3333 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3334 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3335 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3336 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3339 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3341 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3342 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3343 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3344 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3345 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3346 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3351 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3352 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3353 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3359 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3361 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3362 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3363 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3364 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3365 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3366 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3369 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3371 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3372 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3379 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3391 (memtype=DATA).
+NOTE: Deleting CAPITAL.REAL_INVESTMENT_STRUCT3399 (memtype=DATA).
+NOTE: Deleting CAPITAL.STRUCTIMAT (memtype=DATA).
+NOTE: Deleting CAPITAL.STRUCTURES (memtype=DATA).
+NOTE: Deleting CAPITAL.STRUCTUREYEARS (memtype=DATA).
+NOTE: Deleting CAPITAL.TAXFAC (memtype=DATA).
+NOTE: Deleting CAPITAL.YEARS (memtype=DATA).
+18         run;
+
+19         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           12.09 seconds
+16                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+      cpu time            3.44 seconds
+      
+
+20         proc datasets library=comp kill noprint;
+NOTE: Deleting COMP.INTORIES (memtype=DATA).
+21         run;
+
+22         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.04 seconds
+      cpu time            0.01 seconds
+      
+
+23         proc datasets library=deflator kill noprint;
+NOTE: Deleting DEFLATOR.BTOT (memtype=DATA).
+NOTE: Deleting DEFLATOR.BTOT_REBASED (memtype=DATA).
+NOTE: Deleting DEFLATOR.CAPDEFASSET5 (memtype=DATA).
+NOTE: Deleting DEFLATOR.COMMODITY_FLOW_PPI (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3111 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3112 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3113 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3114 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3115 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3116 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3117 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3118 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3119 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3121 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3122 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3131 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3132 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3133 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3141 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3149 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3151 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3152 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3159 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3161 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3162 (memtype=DATA).
+17                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting DEFLATOR.DEFLATOR3169 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3211 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3212 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3219 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3221 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3222 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3231 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3241 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3251 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3252 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3253 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3254 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3255 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3256 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3259 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3261 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3262 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3271 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3272 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3273 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3274 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3279 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3311 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3312 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3313 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3314 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3315 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3321 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3322 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3323 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3324 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3325 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3326 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3327 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3328 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3329 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3331 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3332 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3333 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3334 (memtype=DATA).
+18                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting DEFLATOR.DEFLATOR3335 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3336 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3339 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3341 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3342 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3343 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3344 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3345 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3346 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3351 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3352 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3353 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3359 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3361 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3362 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3363 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3364 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3365 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3366 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3369 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3371 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3372 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3379 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3391 (memtype=DATA).
+NOTE: Deleting DEFLATOR.DEFLATOR3399 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PFGBASE (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3110 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3121 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3122 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3130 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3140 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3150 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3160 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3210 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3221 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3222 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3230 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3240 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3251 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3252 (memtype=DATA).
+19                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting DEFLATOR.PPI_3253 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3254 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3255 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3256 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3259 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3260 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3270 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3315 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_331A (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_331B (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3321 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3322 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3323 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3324 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_332A (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_332B (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3331 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3332 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3333 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3334 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3335 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3336 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3339 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3341 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3344 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3345 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3346 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_334A (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3351 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3352 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3353 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3359 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3361 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3364 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_336A (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_336B (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3370 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3391 (memtype=DATA).
+NOTE: Deleting DEFLATOR.PPI_3399 (memtype=DATA).
+NOTE: Deleting DEFLATOR.STRPRE1948DEFLATOR (memtype=DATA).
+20                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+24         run;
+
+25         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           1.45 seconds
+      cpu time            0.59 seconds
+      
+
+26         proc datasets library=sptools kill noprint;
+NOTE: Deleting SPTOOLS.CFSPTYR (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPECIAL_TOOLS (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_DEPRECIATION3361 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_DEPRECIATION3362 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_DEPRECIATION3363 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_NET_STOCK3361 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_NET_STOCK3362 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_NET_STOCK3363 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_WEALTH_STOCK3361 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_WEALTH_STOCK3362 (memtype=DATA).
+NOTE: Deleting SPTOOLS.SPTOOLS_WEALTH_STOCK3363 (memtype=DATA).
+NOTE: Deleting SPTOOLS.TAXSPT (memtype=DATA).
+27         run;
+
+28         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.18 seconds
+      cpu time            0.09 seconds
+      
+
+29         proc datasets library=ras kill noprint;
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3111 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3112 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3113 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3114 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3115 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3116 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3117 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3118 (memtype=DATA).
+21                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3119 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3121 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3122 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3131 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3132 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3133 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3141 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3149 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3151 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3152 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3159 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3161 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3162 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3169 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3211 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3212 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3219 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3221 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3222 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3231 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3241 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3251 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3252 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3253 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3254 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3255 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3256 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3259 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3261 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3262 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3271 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3272 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3273 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3274 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3279 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3311 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3312 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3313 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3314 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3315 (memtype=DATA).
+22                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3321 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3322 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3323 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3324 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3325 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3326 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3327 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3328 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3329 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3331 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3332 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3333 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3334 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3335 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3336 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3339 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3341 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3342 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3343 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3344 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3345 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3346 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3351 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3352 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3353 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3359 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3361 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3362 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3363 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3364 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3365 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3366 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3369 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3371 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3372 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3379 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3391 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICS3399 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3111 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3112 (memtype=DATA).
+23                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3113 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3114 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3115 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3116 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3117 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3118 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3119 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3121 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3122 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3131 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3132 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3133 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3141 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3149 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3151 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3152 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3159 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3161 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3162 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3169 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3211 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3212 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3219 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3221 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3222 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3231 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3241 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3251 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3252 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3253 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3254 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3255 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3256 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3259 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3261 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3262 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3271 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3272 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3273 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3274 (memtype=DATA).
+24                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3279 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3311 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3312 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3313 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3314 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3315 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3321 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3322 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3323 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3324 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3325 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3326 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3327 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3328 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3329 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3331 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3332 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3333 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3334 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3335 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3336 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3339 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3341 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3342 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3343 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3344 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3345 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3346 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3351 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3352 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3353 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3359 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3361 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3362 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3363 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3364 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3365 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3366 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3369 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3371 (memtype=DATA).
+25                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3372 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3379 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3391 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_PROPNAICSTR3399 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1958 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1959 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1960 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1961 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1962 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1963 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1964 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1965 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1966 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1967 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1968 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1969 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1970 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1971 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1972 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1973 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1974 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1975 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1976 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1977 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1978 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1979 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1980 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1981 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1982 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1983 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1984 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1985 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1986 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1987 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1988 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1989 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1990 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1991 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1992 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1993 (memtype=DATA).
+26                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_RME1994 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1995 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1996 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1997 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1998 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME1999 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2000 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2001 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2002 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2003 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2004 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2005 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2006 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2007 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2008 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2009 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2010 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2011 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2012 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2013 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RME2014 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1958 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1959 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1960 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1961 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1962 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1963 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1964 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1965 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1966 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1967 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1968 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1969 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1970 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1971 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1972 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1973 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1974 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1975 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1976 (memtype=DATA).
+27                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2008_RMS1977 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1978 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1979 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1980 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1981 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1982 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1983 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1984 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1985 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1986 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1987 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1988 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1989 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1990 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1991 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1992 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1993 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1994 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1995 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1996 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1997 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1998 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS1999 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2000 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2001 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2002 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2003 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2004 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2005 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2006 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2007 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2008 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2009 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2010 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2011 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2012 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2013 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2008_RMS2014 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3111 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3112 (memtype=DATA).
+28                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3113 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3114 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3115 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3116 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3117 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3118 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3119 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3121 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3122 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3131 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3132 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3133 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3141 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3149 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3151 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3152 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3159 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3161 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3162 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3169 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3211 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3212 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3219 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3221 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3222 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3231 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3241 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3251 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3252 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3253 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3254 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3255 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3256 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3259 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3261 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3262 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3271 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3272 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3273 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3274 (memtype=DATA).
+29                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3279 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3311 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3312 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3313 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3314 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3315 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3321 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3322 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3323 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3324 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3325 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3326 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3327 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3328 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3329 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3331 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3332 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3333 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3334 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3335 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3336 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3339 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3341 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3342 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3343 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3344 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3345 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3346 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3351 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3352 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3353 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3359 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3361 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3362 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3363 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3364 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3365 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3366 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3369 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3371 (memtype=DATA).
+30                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3372 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3379 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3391 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICS3399 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3111 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3112 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3113 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3114 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3115 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3116 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3117 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3118 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3119 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3121 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3122 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3131 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3132 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3133 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3141 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3149 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3151 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3152 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3159 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3161 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3162 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3169 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3211 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3212 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3219 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3221 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3222 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3231 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3241 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3251 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3252 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3253 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3254 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3255 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3256 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3259 (memtype=DATA).
+31                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3261 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3262 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3271 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3272 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3273 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3274 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3279 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3311 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3312 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3313 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3314 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3315 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3321 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3322 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3323 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3324 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3325 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3326 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3327 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3328 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3329 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3331 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3332 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3333 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3334 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3335 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3336 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3339 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3341 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3342 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3343 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3344 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3345 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3346 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3351 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3352 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3353 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3359 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3361 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3362 (memtype=DATA).
+32                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3363 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3364 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3365 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3366 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3369 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3371 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3372 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3379 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3391 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_PROPNAICSTR3399 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1958 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1959 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1960 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1961 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1962 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1963 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1964 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1965 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1966 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1967 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1968 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1969 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1970 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1971 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1972 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1973 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1974 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1975 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1976 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1977 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1978 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1979 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1980 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1981 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1982 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1983 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1984 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1985 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1986 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1987 (memtype=DATA).
+33                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_RME1988 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1989 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1990 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1991 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1992 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1993 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1994 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1995 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1996 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1997 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1998 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME1999 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2000 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2001 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2002 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2003 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2004 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2005 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2006 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2007 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2008 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2009 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2010 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2011 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2012 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2013 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RME2014 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1958 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1959 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1960 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1961 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1962 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1963 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1964 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1965 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1966 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1967 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1968 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1969 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1970 (memtype=DATA).
+34                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_RMS1971 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1972 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1973 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1974 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1975 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1976 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1977 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1978 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1979 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1980 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1981 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1982 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1983 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1984 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1985 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1986 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1987 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1988 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1989 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1990 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1991 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1992 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1993 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1994 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1995 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1996 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1997 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1998 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS1999 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2000 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2001 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2002 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2003 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2004 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2005 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2006 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2007 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2008 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2009 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2010 (memtype=DATA).
+35                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.ACES_2012_RMS2011 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2012 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2013 (memtype=DATA).
+NOTE: Deleting RAS.ACES_2012_RMS2014 (memtype=DATA).
+NOTE: Deleting RAS.ACES_BIME (memtype=DATA).
+NOTE: Deleting RAS.ACES_BIMS (memtype=DATA).
+NOTE: Deleting RAS.BIME (memtype=DATA).
+NOTE: Deleting RAS.CDEY (memtype=DATA).
+NOTE: Deleting RAS.CDSY (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3111 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3112 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3113 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3114 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3115 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3116 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3117 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3118 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3119 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3121 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3122 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3131 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3132 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3133 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3141 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3149 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3151 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3152 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3159 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3161 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3162 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3169 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3211 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3212 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3219 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3221 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3222 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3231 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3241 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3251 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3252 (memtype=DATA).
+36                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.CFT_PROPNAICS3253 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3254 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3255 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3256 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3259 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3261 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3262 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3271 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3272 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3273 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3274 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3279 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3311 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3312 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3313 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3314 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3315 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3321 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3322 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3323 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3324 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3325 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3326 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3327 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3328 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3329 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3331 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3332 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3333 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3334 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3335 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3336 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3339 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3341 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3342 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3343 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3344 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3345 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3346 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3351 (memtype=DATA).
+37                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.CFT_PROPNAICS3352 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3353 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3359 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3361 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3362 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3363 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3364 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3365 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3366 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3369 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3371 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3372 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3379 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3391 (memtype=DATA).
+NOTE: Deleting RAS.CFT_PROPNAICS3399 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1958 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1959 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1960 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1961 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1962 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1963 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1964 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1965 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1966 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1967 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1968 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1969 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1970 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1971 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1972 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1973 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1974 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1975 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1976 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1977 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1978 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1979 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1980 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1981 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1982 (memtype=DATA).
+38                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.CFT_RME1983 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1984 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1985 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1986 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1987 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1988 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1989 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1990 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1991 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1992 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1993 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1994 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1995 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1996 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1997 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1998 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME1999 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2000 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2001 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2002 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2003 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2004 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2005 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2006 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2007 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2008 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2009 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2010 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2011 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2012 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2013 (memtype=DATA).
+NOTE: Deleting RAS.CFT_RME2014 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3111 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3112 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3113 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3114 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3115 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3116 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3117 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3118 (memtype=DATA).
+39                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICS3119 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3121 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3122 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3131 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3132 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3133 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3141 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3149 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3151 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3152 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3159 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3161 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3162 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3169 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3211 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3212 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3219 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3221 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3222 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3231 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3241 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3251 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3252 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3253 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3254 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3255 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3256 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3259 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3261 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3262 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3271 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3272 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3273 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3274 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3279 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3311 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3312 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3313 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3314 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3315 (memtype=DATA).
+40                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICS3321 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3322 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3323 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3324 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3325 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3326 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3327 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3328 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3329 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3331 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3332 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3333 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3334 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3335 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3336 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3339 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3341 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3342 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3343 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3344 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3345 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3346 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3351 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3352 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3353 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3359 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3361 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3362 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3363 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3364 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3365 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3366 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3369 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3371 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3372 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3379 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3391 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICS3399 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083111 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083112 (memtype=DATA).
+41                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR20083113 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083114 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083115 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083116 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083117 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083118 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083119 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083121 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083122 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083131 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083132 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083133 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083141 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083149 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083151 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083152 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083159 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083161 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083162 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083169 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083211 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083212 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083219 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083221 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083222 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083231 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083241 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083251 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083252 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083253 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083254 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083255 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083256 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083259 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083261 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083262 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083271 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083272 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083273 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083274 (memtype=DATA).
+42                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR20083279 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083311 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083312 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083313 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083314 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083315 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083321 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083322 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083323 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083324 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083325 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083326 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083327 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083328 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083329 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083331 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083332 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083333 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083334 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083335 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083336 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083339 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083341 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083342 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083343 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083344 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083345 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083346 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083351 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083352 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083353 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083359 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083361 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083362 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083363 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083364 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083365 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083366 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083369 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083371 (memtype=DATA).
+43                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR20083372 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083379 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083391 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20083399 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123111 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123112 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123113 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123114 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123115 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123116 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123117 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123118 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123119 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123121 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123122 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123131 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123132 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123133 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123141 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123149 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123151 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123152 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123159 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123161 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123162 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123169 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123211 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123212 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123219 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123221 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123222 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123231 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123241 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123251 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123252 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123253 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123254 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123255 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123256 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123259 (memtype=DATA).
+44                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR20123261 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123262 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123271 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123272 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123273 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123274 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123279 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123311 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123312 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123313 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123314 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123315 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123321 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123322 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123323 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123324 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123325 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123326 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123327 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123328 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123329 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123331 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123332 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123333 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123334 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123335 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123336 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123339 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123341 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123342 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123343 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123344 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123345 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123346 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123351 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123352 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123353 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123359 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123361 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123362 (memtype=DATA).
+45                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR20123363 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123364 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123365 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123366 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123369 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123371 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123372 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123379 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123391 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR20123399 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3111 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3112 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3113 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3114 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3115 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3116 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3117 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3118 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3119 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3121 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3122 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3131 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3132 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3133 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3141 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3149 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3151 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3152 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3159 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3161 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3162 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3169 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3211 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3212 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3219 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3221 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3222 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3231 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3241 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3251 (memtype=DATA).
+46                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR3252 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3253 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3254 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3255 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3256 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3259 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3261 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3262 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3271 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3272 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3273 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3274 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3279 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3311 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3312 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3313 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3314 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3315 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3321 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3322 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3323 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3324 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3325 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3326 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3327 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3328 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3329 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3331 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3332 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3333 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3334 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3335 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3336 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3339 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3341 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3342 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3343 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3344 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3345 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3346 (memtype=DATA).
+47                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting RAS.PROPNAICSTR3351 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3352 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3353 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3359 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3361 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3362 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3363 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3364 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3365 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3366 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3369 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3371 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3372 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3379 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3391 (memtype=DATA).
+NOTE: Deleting RAS.PROPNAICSTR3399 (memtype=DATA).
+30         run;
+
+31         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           19.70 seconds
+      cpu time            5.27 seconds
+      
+
+32         proc datasets library=beadfnew kill noprint;
+NOTE: Deleting BEADFNEW.ACES_PRI (memtype=DATA).
+NOTE: Deleting BEADFNEW.STRUCTURE_PRI (memtype=DATA).
+33         run;
+
+34         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+35         proc datasets library=invest kill noprint;
+NOTE: Deleting INVEST.BEAINV (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3111 (memtype=DATA).
+48                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting INVEST.CAPEX3112 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3113 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3114 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3115 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3116 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3117 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3118 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3119 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3121 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3122 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3131 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3132 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3133 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3141 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3149 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3151 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3152 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3159 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3161 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3162 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3169 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3211 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3212 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3219 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3221 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3222 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3231 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3241 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3251 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3252 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3253 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3254 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3255 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3256 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3259 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3261 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3262 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3271 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3272 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3273 (memtype=DATA).
+49                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting INVEST.CAPEX3274 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3279 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3311 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3312 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3313 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3314 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3315 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3321 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3322 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3323 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3324 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3325 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3326 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3327 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3328 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3329 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3331 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3332 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3333 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3334 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3335 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3336 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3339 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3341 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3342 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3343 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3344 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3345 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3346 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3351 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3352 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3353 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3359 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3361 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3362 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3363 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3364 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3365 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3366 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3369 (memtype=DATA).
+50                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting INVEST.CAPEX3371 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3372 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3379 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3391 (memtype=DATA).
+NOTE: Deleting INVEST.CAPEX3399 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I10 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I11 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I12 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I13 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I14 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I15 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I16 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I17 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I18 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I19 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I20 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I21 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I22 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I23 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I24 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I25 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I26 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I27 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I28 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I8 (memtype=DATA).
+NOTE: Deleting INVEST.SOFTRAT_ALL_I9 (memtype=DATA).
+NOTE: Deleting INVEST.TOTAL_ASSET_SOFTRAT (memtype=DATA).
+36         run;
+
+37         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           1.16 seconds
+      cpu time            0.35 seconds
+      
+
+38         proc datasets library=rental kill noprint;
+39         run;
+
+40         quit;
+51                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+41         proc datasets library=kdetails kill noprint;
+42         run;
+
+43         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+44         proc datasets library=kstock4d kill noprint;
+45         run;
+
+46         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+47         proc datasets library=stock kill noprint;
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3111 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3112 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3113 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3114 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3115 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3116 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3117 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3118 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3119 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3121 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3122 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3131 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3132 (memtype=DATA).
+52                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3133 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3141 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3149 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3151 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3152 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3159 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3161 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3162 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3169 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3211 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3212 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3219 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3221 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3222 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3231 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3241 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3251 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3252 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3253 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3254 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3255 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3256 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3259 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3261 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3262 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3271 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3272 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3273 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3274 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3279 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3311 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3312 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3313 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3314 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3315 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3321 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3322 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3323 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3324 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3325 (memtype=DATA).
+53                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3326 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3327 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3328 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3329 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3331 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3332 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3333 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3334 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3335 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3336 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3339 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3341 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3342 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3343 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3344 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3345 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3346 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3351 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3352 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3353 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3359 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3361 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3362 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3363 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3364 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3365 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3366 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3369 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3371 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3372 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3379 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3391 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_DEPRECIATION3399 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3111 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3112 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3113 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3114 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3115 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3116 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3117 (memtype=DATA).
+54                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3118 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3119 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3121 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3122 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3131 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3132 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3133 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3141 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3149 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3151 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3152 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3159 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3161 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3162 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3169 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3211 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3212 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3219 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3221 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3222 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3231 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3241 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3251 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3252 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3253 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3254 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3255 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3256 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3259 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3261 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3262 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3271 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3272 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3273 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3274 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3279 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3311 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3312 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3313 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3314 (memtype=DATA).
+55                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3315 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3321 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3322 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3323 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3324 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3325 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3326 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3327 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3328 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3329 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3331 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3332 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3333 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3334 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3335 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3336 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3339 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3341 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3342 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3343 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3344 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3345 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3346 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3351 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3352 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3353 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3359 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3361 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3362 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3363 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3364 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3365 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3366 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3369 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3371 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3372 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3379 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3391 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_NET_STOCK3399 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3111 (memtype=DATA).
+56                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3112 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3113 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3114 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3115 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3116 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3117 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3118 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3119 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3121 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3122 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3131 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3132 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3133 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3141 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3149 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3151 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3152 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3159 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3161 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3162 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3169 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3211 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3212 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3219 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3221 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3222 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3231 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3241 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3251 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3252 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3253 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3254 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3255 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3256 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3259 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3261 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3262 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3271 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3272 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3273 (memtype=DATA).
+57                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3274 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3279 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3311 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3312 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3313 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3314 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3315 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3321 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3322 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3323 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3324 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3325 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3326 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3327 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3328 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3329 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3331 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3332 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3333 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3334 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3335 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3336 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3339 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3341 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3342 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3343 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3344 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3345 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3346 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3351 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3352 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3353 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3359 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3361 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3362 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3363 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3364 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3365 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3366 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3369 (memtype=DATA).
+58                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3371 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3372 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3379 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3391 (memtype=DATA).
+NOTE: Deleting STOCK.EQUIPMENT_WEALTH_STOCK3399 (memtype=DATA).
+NOTE: Deleting STOCK.REAL_LAND_STOCK (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3111 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3112 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3113 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3114 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3115 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3116 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3117 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3118 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3119 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3121 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3122 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3131 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3132 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3133 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3141 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3149 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3151 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3152 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3159 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3161 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3162 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3169 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3211 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3212 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3219 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3221 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3222 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3231 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3241 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3251 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3252 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3253 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3254 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3255 (memtype=DATA).
+59                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3256 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3259 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3261 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3262 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3271 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3272 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3273 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3274 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3279 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3311 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3312 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3313 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3314 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3315 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3321 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3322 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3323 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3324 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3325 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3326 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3327 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3328 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3329 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3331 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3332 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3333 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3334 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3335 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3336 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3339 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3341 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3342 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3343 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3344 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3345 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3346 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3351 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3352 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3353 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3359 (memtype=DATA).
+60                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3361 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3362 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3363 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3364 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3365 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3366 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3369 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3371 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3372 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3379 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3391 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_DEPRECIATION3399 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3111 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3112 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3113 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3114 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3115 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3116 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3117 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3118 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3119 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3121 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3122 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3131 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3132 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3133 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3141 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3149 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3151 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3152 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3159 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3161 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3162 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3169 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3211 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3212 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3219 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3221 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3222 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3231 (memtype=DATA).
+61                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3241 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3251 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3252 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3253 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3254 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3255 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3256 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3259 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3261 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3262 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3271 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3272 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3273 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3274 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3279 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3311 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3312 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3313 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3314 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3315 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3321 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3322 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3323 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3324 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3325 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3326 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3327 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3328 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3329 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3331 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3332 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3333 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3334 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3335 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3336 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3339 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3341 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3342 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3343 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3344 (memtype=DATA).
+62                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3345 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3346 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3351 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3352 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3353 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3359 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3361 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3362 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3363 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3364 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3365 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3366 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3369 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3371 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3372 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3379 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3391 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_NET_STOCK3399 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3111 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3112 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3113 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3114 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3115 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3116 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3117 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3118 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3119 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3121 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3122 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3131 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3132 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3133 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3141 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3149 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3151 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3152 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3159 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3161 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3162 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3169 (memtype=DATA).
+63                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3211 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3212 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3219 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3221 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3222 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3231 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3241 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3251 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3252 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3253 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3254 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3255 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3256 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3259 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3261 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3262 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3271 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3272 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3273 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3274 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3279 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3311 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3312 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3313 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3314 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3315 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3321 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3322 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3323 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3324 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3325 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3326 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3327 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3328 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3329 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3331 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3332 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3333 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3334 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3335 (memtype=DATA).
+64                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3336 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3339 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3341 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3342 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3343 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3344 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3345 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3346 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3351 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3352 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3353 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3359 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3361 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3362 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3363 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3364 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3365 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3366 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3369 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3371 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3372 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3379 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3391 (memtype=DATA).
+NOTE: Deleting STOCK.STRUCTURE_WEALTH_STOCK3399 (memtype=DATA).
+48         run;
+
+49         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           10.26 seconds
+      cpu time            3.04 seconds
+      
+
+50         proc datasets library=final kill noprint;
+51         run;
+
+52         quit;
+
+NOTE: PROCEDURE DATASETS used (Total process time):
+      real time           0.01 seconds
+65                                                       The SAS System                              10:10 Friday, July 29, 2016
+
+      cpu time            0.01 seconds
+      
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           46.47 seconds
+      cpu time            13.77 seconds
+      
