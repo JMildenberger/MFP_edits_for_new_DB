@@ -1,33 +1,23 @@
 /*NonEmployer Program 
   Created by - Chris Morris
-  Last Modified - 12/31/2015 
-  Modifed by - Chris Morris */
+  Last Modified - 01/29/2018 
+  Modifed by - Jennifer Kim */
 
 options symbolgen;
 
 libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
-libname SQL ODBC DSN=IPS2DB schema=sas;
+libname SQL ODBC DSN=IPSTestDB schema=sas;
 
 
 /*Creates macro variables from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
-      call symput('updateid', trim(left(put(updateid, 3.))));
+	  length dataset $29;
+      input dataset firstyr lastyr baseperiod;
+	  call symput('dataset',trim(dataset));
       call symput('lastyr', trim(left(put(lastyr, 4.))));
       call symput('baseperiod', trim(left(put(baseperiod, 2.))));
 run;
-
-
-/*Create macro variables for first and last year of data*/
-data _null_;
-      set sql.update (where=(updateid=&updateid));
-      call symput('updatestatusid', updatestatusid);
-run;
-
-%let dataset = %sysfunc(ifc(&updatestatusid=Loading,sql.reportbuilder_preliminary,sql.reportbuilder_current));
-%put &dataset;
 
 
 /*Read in ValProd and LComp files*/
@@ -35,7 +25,7 @@ Proc sql;
 	Create table 	work.ManufacturingSource as 
 	select Distinct IndustryID, Industry as IndustryCodeID, DataSeriesID, DataArrayID, YearID, CensusPeriodID, Year, input(substr(YearID,5,1),1.) as YearNo, Value
 	from 			&dataset
-	where 			(UpdateID=&updateid) and DataSeriesID in ('XT38','XT39', 'XT49') and (substr(IndustryID,3,1)="3") and DigitID = "6-Digit"
+	where 			DataSeriesID in ('XT38','XT39', 'XT49') and (substr(IndustryID,3,1)="3") and DigitID = "6-Digit"
 	order by 		IndustryID, DataSeriesID, YearID;
 quit;
 

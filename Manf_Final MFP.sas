@@ -75,33 +75,24 @@ run;
 %transpose (services,"V01","Services"); 
 %transpose (srvcomp,"V02","SrvComp"); 
 
-/*Imports a textfile containing the UpdateID and Lastyr and creates macro variables*/
+/*Imports a textfile containing Lastyr and creates macro variables*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+      length dataset $29;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
-      call symput('updateid', trim(left(put(updateid, 3.))));
+      input dataset firstyr lastyr baseperiod;
+	  call symput('dataset',trim(dataset));
       call symput('lastyr', trim(left(put(lastyr, 4.))));
 run;
 
 /*Connects to IPS2 database*/
-LIBNAME SQL ODBC DSN=IPS2DB schema=sas;
-
-/*Create macro variables for first and last year of data*/
-data _null_;
-	set sql.update (where=(updateid=&updateid));
-	call symput('updatestatusid', updatestatusid);
-run;
-
-%let dataset = %sysfunc(ifc(&updatestatusid=Loading,sql.reportbuilder_preliminary,sql.reportbuilder_current));
+LIBNAME SQL ODBC DSN=IPSTestDB schema=sas;
 
 /*Filters IPS view*/
 data work.IPSData;
 	set 	&dataset;
 	where	dataseriesid in("L01","L20","L02","T01","T30","T05","W01","W20","W00","L00","U10") AND 
 			SectorID="31,32,33" AND 
-			DigitID="4-Digit" AND 
-			ProductivityDB=1 AND                     
+			DigitID="4-Digit" AND                    
 			year le &lastyr;
 run;
 

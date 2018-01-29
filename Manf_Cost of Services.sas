@@ -1,6 +1,6 @@
 /*Cost of Services Program 
   Created by - Jason McClellan
-  Last Modified - 06/23/2017 
+  Last Modified - 01/29/2018 
   Modifed by - Jennifer Kim */
 
 /*ABSTRACT 
@@ -19,16 +19,16 @@ libname Capital "Q:\MFP\SAS Libraries\Manufacturing\Capital\capital";
 
 /*Creates a macro variables from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
+	  length dataset $29;
+      input dataset firstyr lastyr baseperiod;
 	  year = trim(left(put(lastyr, 4.)));
 	  lastyear_2 = substr(year,3,2);
 	  lastyear_3 = substr(year,2,3);
+	  call symput('dataset',trim(dataset));
 	  call symputx ("lastyear", year);
 	  call symputx ("lastyear_2", lastyear_2);
 	  call symputx ("lastyear_3", lastyear_3);
-	  call symput('updateid', trim(left(put(updateid, 3.))));
 run;
 
 
@@ -474,23 +474,14 @@ temp=input(compress(NAICS),$4.);
 run;
 
 /* This part of the program pulls in the source data from IPS*/
-Libname SQL ODBC DSN=IPS2DB schema=sas;
-
-/*Create macro variables for first and last year of data*/
-data _null_;
-      set sql.update (where=(updateid=&updateid));
-      call symput('updatestatusid', updatestatusid);
-run;
-
-%let dataset = %sysfunc(ifc(&updatestatusid=Loading,sql.reportbuilder_preliminary,sql.reportbuilder_current));
-%put &dataset;
+Libname SQL ODBC DSN=IPSTestDB schema=sas;
 
 /*Read in ValProd and LComp files*/
 Proc sql;
 	Create table 	work.valprod_lcomp as 
 	select Distinct Industry as NAICS, DataSeries as DataSeriesCodeID, DataSeriesID, Year, Value
 	from 			&dataset
-	where 			(UpdateID=&updateid) and DataSeriesID in ('T30','L02') and (substr(IndustryID,3,1)="3") and DigitID = "4-Digit"
+	where 			DataSeriesID in ('T30','L02') and (substr(IndustryID,3,1)="3") and DigitID = "4-Digit"
 	order by 		NAICS, DataSeriesID, Year;
 quit;
 

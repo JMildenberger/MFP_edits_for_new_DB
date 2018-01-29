@@ -1,4 +1,4 @@
-/*Intrasctoral Program 
+/* Intrasectoral Program 
   Created by - Chris Morris
   Last Modified - 01/29/2018 
   Modifed by - Jennifer Kim */
@@ -20,7 +20,7 @@ run;
 
 /*Read in intrasectoral data*/
 data work.Intrasectoral_raw;
-	set Input.manufacturingintra;
+	set Input.intraload_mfp;
 run;
 
 

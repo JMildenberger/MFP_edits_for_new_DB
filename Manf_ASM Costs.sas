@@ -1,7 +1,7 @@
 /* ASM Cost Program 
   Created by - Jennifer Kim
-  Last Modified - 01/15/2016 
-  Modifed by - Chris Morris */
+  Last Modified - 01/29/2018 
+  Modifed by - Jennifer Kim */
 
 options symbolgen;
 
@@ -12,9 +12,9 @@ libname comp 'Q:\MFP\SAS Libraries\Manufacturing\Capital\comp';
 
 /*Creates macro variable from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
+	  length dataset $29;
+      input dataset firstyr lastyr baseperiod;
       call symput('lastyr', trim(left(put(lastyr, 4.))));
 run;
 

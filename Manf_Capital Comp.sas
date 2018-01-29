@@ -19,17 +19,17 @@ libname exports 'Q:\MFP\SAS Libraries\Manufacturing\Capital\exports';
 libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
 
 /*Connects to IPS2 database*/
-LIBNAME SQL ODBC DSN=IPS2DB schema=sas;
+LIBNAME SQL ODBC DSN=IPSTestDB schema=sas;
 
 /*Creating a macro variable for the update year*/
  data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+      length dataset $29;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
-      call symput('updateid', trim(left(put(updateid, 3.))));
+      input dataset firstyr lastyr baseperiod;
+      call symput('dataset',trim(dataset));
       call symput('last', trim(left(put(lastyr, 4.))));
 run;
-%put &updateid;
+%put &dataset;
 %put &last;
 
  /*Creating macro variables for the names of NAICS Industries*/
@@ -38,29 +38,15 @@ set capital.indys nobs=x;
       call symputx ("NAICS_Indy"!!left(_n_),NAICS);
  run;
 
-/*Determining if the IPS data should be pulled from the preliminary or current database view (current=published)*/
-data work.update;
-set sql.update (where=(updateid=&updateid));
-if UpDateStatusID="Loading" then database="Preliminary";
-if UpDateStatusID="PublicAccess" then database="Current";
-run;
-
-/*Creating a macro variable for the database variable*/
-data _null_;
-set work.update nobs=x;
-      call symput('database', trim(left(put(database, 11.))));
- run;
-%put &database;
-
  /*getting the latest values from IPS
    Valprod = T30
    Lcomp   = L02
    ImprDef = T05*/
 data work.ips_data;
-set sql.reportbuilder_&database (where=(updateid=&updateid. and (dataseriesid="T30" or dataseriesid="L02" or
-                                                            dataseriesid="T05")));
+set &dataset (where=(dataseriesid="T30" or dataseriesid="L02" or
+                      dataseriesid="T05"));
 NAICS=Industry;
-keep year value dataseriesid industryid industry naics updatename;
+keep year value dataseriesid industryid industry naics;
 run;
 
 /*Creating a Valprod Dataset*/

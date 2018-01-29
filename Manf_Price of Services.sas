@@ -1,7 +1,7 @@
 /*Price of Services
   Created by: Mike Manley
   Modified by: Jennifer Kim
-  Last modified: May 18, 2017 */
+  Last modified: January 29, 2018 */
 
 /*Necessary input files:  a.) Service Deflators
 						  b.) All BEA IO Tables (1997, 2002, 2007 currently)
@@ -13,9 +13,9 @@ libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
 
 /* Creates macro variable from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+      length dataset $29;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
+      input dataset firstyr lastyr baseperiod;
       call symput('lastyr', trim(left(put(lastyr, 4.))));
 run;
 

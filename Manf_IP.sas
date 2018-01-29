@@ -5,9 +5,9 @@ libname IP "Q:\MFP\SAS Libraries\Manufacturing\IP";
 
 /*Creates a macro variables from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+      length dataset $29;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
+      input dataset firstyr lastyr baseperiod;
       call symput('first', trim(left(put(firstyr, 4.))));
       call symput('last', trim(left(put(lastyr, 4.))));
 run;

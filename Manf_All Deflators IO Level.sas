@@ -1,6 +1,6 @@
 /* All Domestic Deflators to IO Level - for Price of Services & Price of Materials
    Created by: Jennifer Kim
-   Last modified: May 16, 2016 */		
+   Last modified: January 29, 2018 */		
 
 /* This program aggregates All Domestic Deflators to the IO Level for Price of Services and Price of Materials.
    The verified historical file 1987-2012 is locked down. For 2012-&lastyr, we will TQ aggregate, chain-link, then 
@@ -10,9 +10,9 @@ libname IP 'Q:\MFP\SAS Libraries\Manufacturing\IP';
 
 /*Creates macro variable from textfile*/
 data _null_;
-      length updateid 3 firstyr 4 lastyr 4 baseperiod 3;
+      length dataset $29;
       infile "R:\MFP DataSets\Manufacturing\MFP\SAS Inputs\MFP_Parameters.txt" dlm='09'x firstobs=2;
-      input updateid firstyr lastyr baseperiod;
+      input dataset firstyr lastyr baseperiod;
       call symput('lastyr', trim(left(put(lastyr, 4.))));
 run;
 
